@@ -51,7 +51,7 @@ LEGAL_CONFIGS = {
     },
 }
 
-SUPPORTED_OPS = ["mm", "bmm"]
+SUPPORTED_OPS = ["mm", "bmm", "addmm"]
 
 logger = logging.getLogger(__name__)
 
@@ -206,4 +206,4 @@ def get_tuned_config(func):
 
 
 def setup_triton_config():
-    ConfigLoader.get_tuned_config = get_tuned_config(ConfigLoader.get_tuned_config)
+    ConfigLoader.get_triton_config = get_tuned_config(ConfigLoader.get_triton_config)
