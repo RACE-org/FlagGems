@@ -4,7 +4,6 @@ import torch
 import triton
 import triton.language as tl
 
-from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
 from flag_gems.utils import libentry
 
@@ -12,10 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 @libentry()
-@triton.autotune(
-    configs=runtime.get_tuned_config("mv"),
-    key=["M", "N"],
-)
 @triton.jit
 def mv_kernel(
     A,
@@ -27,55 +22,50 @@ def mv_kernel(
     stride_am,
     stride_bm,
     stride_cn,
-    BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
+    BLOCK_M: tl.constexpr,
 ):
     pid = tl.program_id(0)
-    block_start_n = pid * BLOCK_N
-    acc = tl.zeros((BLOCK_N, BLOCK_M), dtype=A.dtype.element_ty)
+    num_ctas = tl.num_programs(0)
+    num_blocks_n = tl.cdiv(N, BLOCK_N)
+    sub_num = tl.cdiv(max(num_blocks_n - pid, 0), num_ctas)
 
-    for m in range(0, M, BLOCK_M):
-        a_block_ptr = tl.make_block_ptr(
-            base=A,
-            shape=[N, M],
-            strides=[stride_an, stride_am],
-            offsets=[block_start_n, m],
-            block_shape=[BLOCK_N, BLOCK_M],
-            order=[1, 0],
-        )
-        a = tl.load(a_block_ptr, boundary_check=(0, 1)).to(A.dtype.element_ty)
+    offs_n = tl.arange(0, BLOCK_N)
+    offs_m = tl.arange(0, BLOCK_M)
 
-        b_block_ptr = tl.make_block_ptr(
-            base=B,
-            shape=[M],
-            strides=[stride_bm],
-            offsets=[m],
-            block_shape=[BLOCK_M],
-            order=[0],
-        )
-        b = tl.load(b_block_ptr, boundary_check=(0,)).to(A.dtype.element_ty)
-        acc += a * b[None, :]
+    for block_idx in tl.range(0, sub_num):
+        task_idx = pid + num_ctas * block_idx
+        block_start_n = task_idx * BLOCK_N
+        rows = block_start_n + offs_n
+        n_mask = rows < N
+        acc_dtype = tl.float32
+        acc = tl.zeros((BLOCK_N,), dtype=acc_dtype)
 
-    result = tl.sum(acc, axis=1)
-    c_block_ptr = tl.make_block_ptr(
-        base=C,
-        shape=[N],
-        strides=[stride_cn],
-        offsets=[block_start_n],
-        block_shape=[BLOCK_N],
-        order=[0],
-    )
-    tl.store(c_block_ptr, result.to(C.dtype.element_ty), boundary_check=(0,))
+        for m in range(0, M, BLOCK_M):
+            cols = m + offs_m
+            m_mask = cols < M
+            a_ptrs = A + rows[:, None] * stride_an + cols[None, :] * stride_am
+            b_ptrs = B + cols * stride_bm
+            a = tl.load(a_ptrs, mask=n_mask[:, None] & m_mask[None, :], other=0.0).to(
+                acc_dtype
+            )
+            b = tl.load(b_ptrs, mask=m_mask, other=0.0).to(acc_dtype)
+            partial = tl.sum(a * b[None, :], axis=1)
+            acc += partial
+
+        c_ptrs = C + rows * stride_cn
+        tl.store(c_ptrs, acc.to(C.dtype.element_ty), mask=n_mask)
 
 
-def mv(inp, vec):
+def mv(inp, vec, block_n=32, block_m=32, num_ctas=16):
     logger.debug("GEMS_SPACEMIT MV")
+    if inp.stride(0) > 1 and inp.stride(1) > 1:
+        inp = inp.contiguous()
     assert inp.shape[1] == vec.shape[0], "incompatible dimensions"
     N, M = inp.shape
     out = torch.empty((N,), device=inp.device, dtype=inp.dtype)
-    grid = lambda META: (triton.cdiv(N, META["BLOCK_N"]),)
     with torch_device_fn.device(inp.device):
-        mv_kernel[grid](
+        mv_kernel[(num_ctas,)](
             inp,
             vec,
             out,
@@ -85,5 +75,8 @@ def mv(inp, vec):
             inp.stride(1),
             vec.stride(0),
             out.stride(0),
+            BLOCK_N=block_n,
+            BLOCK_M=block_m,
+            num_ctas=num_ctas,
         )
     return out

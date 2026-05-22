@@ -17,12 +17,18 @@ def conv1d(input, weight, bias=None, padding=0, stride=1, dilation=1, groups=1):
         padding_width = padding[0]
     else:
         padding_width = padding
+
+    if isinstance(dilation, (list, tuple)):
+        dilation_width = dilation[0]
+    else:
+        dilation_width = dilation
+
     return conv2d(
         input.unsqueeze(-1),
         weight.unsqueeze(-1),
         bias,
-        (padding_width, 0),
         (stride_width, 1),
-        dilation,
+        (padding_width, 0),
+        (dilation_width, 1),
         groups,
     ).squeeze(-1)

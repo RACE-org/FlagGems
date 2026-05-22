@@ -30,28 +30,32 @@ LEGAL_CONFIGS = {
         "bmm": _GEMM_CONFIG_0,
         "addmm": _GEMM_CONFIG_0,
         "attention": _GEMM_CONFIG_0,
+        "conv2d": _GEMM_CONFIG_0,
     },
     "0xA03C": {
         "mm": _GEMM_CONFIG_A03C,
         "bmm": _GEMM_CONFIG_A03C,
         "addmm": _GEMM_CONFIG_A03C,
         "attention": _GEMM_CONFIG_A03C,
+        "conv2d": _GEMM_CONFIG_A03C,
     },
     "0xA064": {
         "mm": _MM_CONFIG_A064,
         "bmm": _MM_CONFIG_A064,
         "addmm": _MM_CONFIG_A064,
         "attention": _MM_CONFIG_A064,
+        "conv2d": _MM_CONFIG_A064,
     },
     "0xF000": {
         "mm": _GEMM_CONFIG_F000,
         "bmm": _GEMM_CONFIG_F000,
         "addmm": _GEMM_CONFIG_F000,
         "attention": _GEMM_CONFIG_F000,
+        "conv2d": _GEMM_CONFIG_F000,
     },
 }
 
-SUPPORTED_OPS = ["mm", "bmm", "addmm"]
+SUPPORTED_OPS = ["mm", "bmm", "addmm", "attention", "conv2d"]
 
 logger = logging.getLogger(__name__)
 
@@ -130,10 +134,11 @@ def get_tuned_config(func):
                 if c is not None and getattr(c, "kwargs", None) is not None
             ]
 
+        is_spacemit_op = op_name.endswith("_spacemit")
         # Remove _spacemit suffix for config lookup
         op_key = _strip_spacemit_suffix(op_name)
 
-        if op_key in SUPPORTED_OPS and configs and len(configs) > 0:
+        if is_spacemit_op and op_key in SUPPORTED_OPS and configs and len(configs) > 0:
             arch_id = get_current_arch_id()
 
             def make_pre_hook(config_obj):
