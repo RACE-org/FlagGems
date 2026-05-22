@@ -5,9 +5,17 @@ import triton
 import triton.language as tl
 import triton.language.extra.smt as smt
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
+
 logger = logging.getLogger(__name__)
 
 
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("addmm"),
+    key=["M", "N", "K"],
+)
 @triton.jit
 def addmm_kernel(
     a_ptr,
@@ -29,6 +37,7 @@ def addmm_kernel(
     stride_cn,
     BLOCK_SIZE_M: tl.constexpr,
     BLOCK_SIZE_N: tl.constexpr,
+    EVEN_K: tl.constexpr,
     BLOCK_SIZE_K: tl.constexpr,
     MICRO_M: tl.constexpr,
     MICRO_K: tl.constexpr,
@@ -56,27 +65,46 @@ def addmm_kernel(
         order=[1, 0],
     )
 
-    accumulator = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=a_ptr.type.element_ty)
-    accumulator = smt.view(
-        accumulator, (0, 0), (BLOCK_SIZE_M, BLOCK_SIZE_N), (MICRO_M, MICRO_N)
-    )
-    sub_num = (K + SUB_BLK_K - 1) // SUB_BLK_K
-    for k in tl.range(0, sub_num):
+    if EVEN_K:
         a_descriptor_load = smt.descriptor_load(a_block_ptr, (0, 0))
         a = smt.view(
             a_descriptor_load,
-            (0, k * SUB_BLK_K),
-            (BLOCK_SIZE_M, SUB_BLK_K),
+            (0, 0),
+            (BLOCK_SIZE_M, BLOCK_SIZE_K),
             (MICRO_M, MICRO_K),
         )
         b_descriptor_load = smt.descriptor_load(b_block_ptr, (0, 0))
         b = smt.view(
             b_descriptor_load,
-            (k * SUB_BLK_K, 0),
-            (SUB_BLK_K, BLOCK_SIZE_N),
+            (0, 0),
+            (BLOCK_SIZE_K, BLOCK_SIZE_N),
             (MICRO_K, MICRO_N),
         )
-        accumulator += smt.dot(a, b)
+        accumulator = smt.dot(a, b)
+    else:
+        accumulator = tl.zeros(
+            (BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=a_ptr.type.element_ty
+        )
+        accumulator = smt.view(
+            accumulator, (0, 0), (BLOCK_SIZE_M, BLOCK_SIZE_N), (MICRO_M, MICRO_N)
+        )
+        sub_num = (K + SUB_BLK_K - 1) // SUB_BLK_K
+        for k in tl.range(0, sub_num):
+            a_descriptor_load = smt.descriptor_load(a_block_ptr, (0, 0))
+            a = smt.view(
+                a_descriptor_load,
+                (0, k * SUB_BLK_K),
+                (BLOCK_SIZE_M, SUB_BLK_K),
+                (MICRO_M, MICRO_K),
+            )
+            b_descriptor_load = smt.descriptor_load(b_block_ptr, (0, 0))
+            b = smt.view(
+                b_descriptor_load,
+                (k * SUB_BLK_K, 0),
+                (SUB_BLK_K, BLOCK_SIZE_N),
+                (MICRO_K, MICRO_N),
+            )
+            accumulator += smt.dot(a, b)
     accumulator = smt.view(accumulator, (0, 0), (BLOCK_SIZE_M, BLOCK_SIZE_N), (1, 1))
 
     bias_block_ptr = tl.make_block_ptr(
@@ -123,15 +151,6 @@ def addmm(bias, mat1, mat2, *, beta=1, alpha=1):
     BLOCK_SIZE_K = triton.next_power_of_2(K)
     SUB_BLK_K = min(1024, BLOCK_SIZE_K)
 
-    if mat1.dtype == torch.float32:
-        MICRO_M = 8
-        MICRO_N = 32
-        MICRO_K = 32
-    else:
-        MICRO_M = 16
-        MICRO_N = 32
-        MICRO_K = 8
-
     addmm_kernel[grid](
         mat1,
         mat2,
@@ -150,12 +169,7 @@ def addmm(bias, mat1, mat2, *, beta=1, alpha=1):
         bias.stride(1),
         out.stride(0),
         out.stride(1),
-        BLOCK_SIZE_M=32,
-        BLOCK_SIZE_N=32,
         BLOCK_SIZE_K=BLOCK_SIZE_K,
-        MICRO_M=MICRO_M,
-        MICRO_N=MICRO_N,
-        MICRO_K=MICRO_K,
         SUB_BLK_K=SUB_BLK_K,
     )
     return out

@@ -1,31 +1,55 @@
 attention:
-- gen: true
-  param_map:
-    META:
-      BLOCK_M: block_m
-      BLOCK_N: block_n
-      PRE_LOAD_V: pre_load_v
-  block_m:
-  - 64
-  - 128
-  block_n:
-  - 32
-  - 64
-  - 128
-  pre_load_v:
-  - true
-  - false
+  - gen: true
+    param_map:
+      META:
+        BLOCK_M: block_m
+        BLOCK_N: block_n
+        PRE_LOAD_V: pre_load_v
+      num_warps: warps
+      num_stages: stages
+    block_m:
+      - 32
+      - 64
+      - 128
+    block_n:
+      - 32
+      - 64
+      - 128
+    pre_load_v:
+      - true
+      - false
+    warps:
+      - 4
+      - 8
+    stages:
+      - 2
+      - 3
+      - 4
+attention_bwd:
+  - gen: true
+    param_map:
+      META: metas
+      num_warps: warps
+      num_stages: stages
+    metas:
+      - {BLOCK_M1: 32, BLOCK_N1: 128, BLOCK_M2: 128, BLOCK_N2: 32}
+      - {BLOCK_M1: 64, BLOCK_N1: 128, BLOCK_M2: 64, BLOCK_N2: 64}
+      - {BLOCK_M1: 64, BLOCK_N1: 128, BLOCK_M2: 64, BLOCK_N2: 32}
+    warps:
+      - 4
+      - 8
+    stages:
+      - 2
+      - 3
+      - 4
 bmm:
 - META:
     TILE_M: 128
     TILE_N: 256
-    mr: 48
-    nr: 512
-    mt: 3
-    nt: 1
-    mb: 8
-    nb: 16
-    kb: 8
+    EVEN_K: 1
+    MICRO_M: 8
+    MICRO_N: 32
+    MICRO_K: 32
 argmax:
 - META:
     BLOCK_M: 8
@@ -54,9 +78,10 @@ mm:
 - META:
     BLOCK_SIZE_M: 32
     BLOCK_SIZE_N: 32
-    EVEN_K: 0
+    EVEN_K: 1
+    SPLIT_M: 0
     SPLIT_N: 0
-    SPLIT_K: 1
+    SPLIT_K: 0
     SUB_BLK_M: 16
     SUB_BLK_N: 16
     MICRO_M: 8
@@ -128,16 +153,12 @@ max:
     BLOCK_M: 32
     BLOCK_N: 512
 addmm:
-- META:
-    BLOCK_SIZE_M: 128
-    BLOCK_SIZE_N: 256
-    mr: 48
-    nr: 512
-    mt: 3
-    nt: 1
-    mb: 8
-    nb: 16
-    kb: 8
+  - META:
+      BLOCK_SIZE_M: 128
+      BLOCK_SIZE_N: 256
+      BLOCK_SIZE_K: 64
+    num_stages: 3
+    num_warps: 8
 cross_entropy_loss:
 - META:
     BLOCK_C: 256
@@ -541,18 +562,20 @@ var_mean:
   - 2048
 
 conv2d_forward:
-- META:
-    BLOCK_SIZE_M: 32
-    BLOCK_SIZE_N: 32
-    BLOCK_SIZE_K: 256
-    GROUP_SIZE_M: 1
+  - META:
+      BLOCK_NI_HO_WO: 32
+      BLOCK_CO: 32
+      BLOCK_CI: 32
+    num_warps: 4
+    num_stages: 2
 
 conv2d_backward_weight:
-- META:
-    BLOCK_SIZE_M: 32
-    BLOCK_SIZE_N: 32
-    BLOCK_SIZE_K: 256
-    GROUP_SIZE_M: 1
+  - META:
+      BLOCK_CI_HK_WK: 32
+      BLOCK_CO: 32
+      BLOCK_NO: 32
+    num_warps: 4
+    num_stages: 3
 
 im2col:
 - META:

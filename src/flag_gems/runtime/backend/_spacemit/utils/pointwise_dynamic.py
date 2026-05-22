@@ -1,7 +1,12 @@
 import flag_gems
 from flag_gems.utils.pointwise_dynamic import KernelGenerator as BaseKernelGenerator
 from flag_gems.utils.pointwise_dynamic import ModuleGenerator as BaseModuleGenerator
-from flag_gems.utils.pointwise_dynamic import WrapperGenerator, _cs, _tuple_content
+from flag_gems.utils.pointwise_dynamic import (
+    WrapperGenerator,
+    _cs,
+    _tuple_content,
+    pointwise_dynamic,
+)
 
 
 class KernelGenerator(BaseKernelGenerator):

@@ -3,6 +3,9 @@ import triton
 import triton.language as tl
 import triton.language.extra.smt as smt
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
+
 
 @triton.jit
 def _attn_fwd_inner(
@@ -100,6 +103,11 @@ def _attn_fwd_inner(
     return acc, l_i_2d, m_i_2d
 
 
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("attention"),
+    key=["Q_CTX", "KV_CTX", "HEAD_DIM", "GROUP_SIZE"],
+)
 @triton.jit
 def _attn_fwd(
     Q,
@@ -139,9 +147,6 @@ def _attn_fwd(
     MICRO_M: tl.constexpr,
     MICRO_K: tl.constexpr,
     MICRO_N: tl.constexpr,
-    num_m_tiles: tl.constexpr,
-    num_n_tiles: tl.constexpr,
-    num_k_tiles: tl.constexpr,
     num_ctas: tl.constexpr,
 ):
     NUM_BLOCKS_M = tl.cdiv(Q_CTX, BLOCK_M)
@@ -199,6 +204,10 @@ def _attn_fwd(
         offs_m = task_m_idx * BLOCK_M + tl.arange(0, BLOCK_M)
         offs_n = tl.arange(0, BLOCK_N)
 
+        # compute tile counts from META-provided BLOCK_*/MICRO_*
+        num_m_tiles: tl.constexpr = BLOCK_M // MICRO_M
+        num_k_tiles: tl.constexpr = BLOCK_SIZE_K // MICRO_N
+
         m_i_2d = tl.zeros([num_m_tiles, MICRO_M], dtype=tl.float32) - float("inf")
         l_i_2d = tl.zeros([num_m_tiles, MICRO_M], dtype=tl.float32) + 1.0
         acc_4d = tl.zeros(
@@ -226,8 +235,9 @@ def _attn_fwd(
                 MICRO_M,
                 MICRO_K,
                 MICRO_N,
-                num_m_tiles,
-                num_n_tiles,
+                BLOCK_M // MICRO_M,
+                BLOCK_N // MICRO_N,
+                BLOCK_SIZE_K // MICRO_N,
             )
         else:
             if STAGE & 1:
@@ -251,8 +261,9 @@ def _attn_fwd(
                     MICRO_M,
                     MICRO_K,
                     MICRO_N,
-                    num_m_tiles,
-                    num_n_tiles,
+                    BLOCK_M // MICRO_M,
+                    BLOCK_N // MICRO_N,
+                    BLOCK_SIZE_K // MICRO_N,
                 )
             if STAGE & 2:
                 acc_4d, l_i_2d, m_i_2d = _attn_fwd_inner(
@@ -275,8 +286,9 @@ def _attn_fwd(
                     MICRO_M,
                     MICRO_K,
                     MICRO_N,
-                    num_m_tiles,
-                    num_n_tiles,
+                    BLOCK_M // MICRO_M,
+                    BLOCK_N // MICRO_N,
+                    BLOCK_SIZE_K // MICRO_N,
                 )
 
         acc_2d = smt.view(acc_4d, (0, 0), (BLOCK_M, BLOCK_SIZE_K), (1, 1))
@@ -320,15 +332,6 @@ class Attention(torch.autograd.Function):
             assert H_Q == H_KV
             GROUP_SIZE = 1
 
-        if q.dtype == torch.float32:
-            MICRO_M = 8
-            MICRO_N = 32
-            MICRO_K = 32
-        else:
-            MICRO_M = 16
-            MICRO_N = 32
-            MICRO_K = 8
-
         o = torch.empty_like(q)
         acc = torch.empty(
             (q.shape[0], q.shape[1], q.shape[2], HEAD_DIM_K),
@@ -344,16 +347,10 @@ class Attention(torch.autograd.Function):
         else:
             STAGE = 1
 
-        BLOCK_M = 32
-        BLOCK_N = 32
-
-        num_m_tiles = BLOCK_M // MICRO_M
-        num_n_tiles = BLOCK_N // MICRO_N
-        num_k_tiles = BLOCK_SIZE_K // MICRO_N
-
         num_ctas = 16
+        grid = lambda META: (META.get("num_ctas", num_ctas),)
 
-        _attn_fwd[(num_ctas,)](
+        _attn_fwd[grid](
             q,
             k,
             v,
@@ -384,17 +381,8 @@ class Attention(torch.autograd.Function):
             Q_CTX=Q_CTX,
             KV_CTX=KV_CTX,
             HEAD_DIM=HEAD_DIM_K,
-            BLOCK_M=BLOCK_M,
-            BLOCK_N=BLOCK_N,
             STAGE=STAGE,
             BLOCK_SIZE_K=BLOCK_SIZE_K,
-            MICRO_M=MICRO_M,
-            MICRO_K=MICRO_K,
-            MICRO_N=MICRO_N,
-            num_m_tiles=num_m_tiles,
-            num_n_tiles=num_n_tiles,
-            num_k_tiles=num_k_tiles,
-            num_ctas=num_ctas,
         )
 
         return o
@@ -426,10 +414,4 @@ def scaled_dot_product_attention(
     query = query.clone().contiguous()
     key = key.clone().contiguous()
     value = value.clone().contiguous()
-    # query = query.contiguous()
-    # key = key.contiguous()
-    # value = value.contiguous()
-    # print(f"\n  Q shape: {query.shape}, stride: {query.stride()}, contiguous: {query.is_contiguous()}")
-    # print(f"  K shape: {key.shape}, stride: {key.stride()}, contiguous: {key.is_contiguous()}")
-    # print(f"  V shape: {value.shape}, stride: {value.stride()}, contiguous: {value.is_contiguous()}")
     return Attention.apply(query, key, value, scale, is_causal, enable_gqa)

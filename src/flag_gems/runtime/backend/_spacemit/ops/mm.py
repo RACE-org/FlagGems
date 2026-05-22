@@ -3,7 +3,15 @@ import triton
 import triton.language as tl
 import triton.language.extra.smt as smt
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
 
+
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("mm"),
+    key=["M", "N", "K"],
+)
 @triton.jit
 def mm_kernel(
     a_ptr,
@@ -22,6 +30,7 @@ def mm_kernel(
     BLOCK_SIZE_N: tl.constexpr,
     BLOCK_SIZE_K: tl.constexpr,
     EVEN_K: tl.constexpr,
+    SPLIT_M: tl.constexpr,
     SPLIT_N: tl.constexpr,
     SPLIT_K: tl.constexpr,
     SUB_BLK_M: tl.constexpr,
@@ -52,6 +61,30 @@ def mm_kernel(
     )
 
     if EVEN_K:
+        a_descriptor_load = smt.descriptor_load(a_block_ptr, (0, 0))
+        a = smt.view(
+            a_descriptor_load, (0, 0), (BLOCK_SIZE_M, BLOCK_SIZE_K), (MICRO_M, MICRO_K)
+        )
+        b_descriptor_load = smt.descriptor_load(b_block_ptr, (0, 0))
+        b = smt.view(
+            b_descriptor_load, (0, 0), (BLOCK_SIZE_K, BLOCK_SIZE_N), (MICRO_K, MICRO_N)
+        )
+        accumulator = smt.dot(a, b)
+        accumulator = smt.view(
+            accumulator, (0, 0), (BLOCK_SIZE_M, BLOCK_SIZE_N), (1, 1)
+        )
+        c = accumulator.to(c_ptr.dtype.element_ty)
+        c_block_ptr = tl.make_block_ptr(
+            base=c_ptr,
+            shape=[M, N],
+            strides=[stride_cm, stride_cn],
+            offsets=[pid_m * BLOCK_SIZE_M, pid_n * BLOCK_SIZE_N],
+            block_shape=[BLOCK_SIZE_M, BLOCK_SIZE_N],
+            order=[1, 0],
+        )
+        tl.store(c_block_ptr, c, boundary_check=(0, 1))
+
+    elif SPLIT_M:
         b_descriptor_load = smt.descriptor_load(b_block_ptr, (0, 0))
         b = smt.view(
             b_descriptor_load, (0, 0), (BLOCK_SIZE_K, BLOCK_SIZE_N), (MICRO_K, MICRO_N)
@@ -196,20 +229,6 @@ def mm(a, b):
     )
     BLOCK_SIZE_K = triton.next_power_of_2(K)
     SUB_BLK_K = min(512, BLOCK_SIZE_K)
-    arch_id = triton.runtime.driver.active.current_arch_id
-
-    MICRO_M = 8
-    MICRO_N = 32
-    MICRO_K = 32
-
-    if a.dtype == torch.float32 and arch_id == "0xA064":
-        MICRO_M = 8
-        MICRO_N = 32
-        MICRO_K = 32
-    elif a.dtype == torch.float16 and arch_id == "0xA064":
-        MICRO_M = 16
-        MICRO_N = 32
-        MICRO_K = 8
 
     mm_kernel[grid](
         a,
@@ -224,17 +243,7 @@ def mm(a, b):
         b.stride(1),
         c.stride(0),
         c.stride(1),
-        BLOCK_SIZE_M=32,
-        BLOCK_SIZE_N=32,
         BLOCK_SIZE_K=BLOCK_SIZE_K,
-        EVEN_K=0,
-        SPLIT_N=0,
-        SPLIT_K=1,
-        SUB_BLK_M=16,
-        SUB_BLK_N=32,
-        MICRO_M=MICRO_M,
-        MICRO_K=MICRO_K,
-        MICRO_N=MICRO_N,
         SUB_BLK_K=SUB_BLK_K,
     )
     return c
