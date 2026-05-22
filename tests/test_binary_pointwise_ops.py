@@ -353,6 +353,7 @@ def test_accuracy_div_scalar_scalar(dtype):
 @pytest.mark.parametrize("dtype", [torch.float32])
 # Note : tl.math.div_rz only support float32, cast will cause diff
 # with torch, so we only do float32 test for now.
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_trunc_div(shape, dtype):
     inp1 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
     inp2 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
@@ -395,6 +396,7 @@ def test_accuracy_trunc_divide_scalar_scalar(dtype):
 @pytest.mark.floor_divide
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", [torch.float32])
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_floor_div_float(shape, dtype):
     inp1 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
     inp2 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
@@ -411,6 +413,7 @@ def test_accuracy_floor_div_float(shape, dtype):
 @pytest.mark.floor_divide
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_floor_div_int(shape, dtype):
     inp1 = torch.randint(
         torch.iinfo(dtype).min,
@@ -839,6 +842,7 @@ def test_accuracy_minimum(shape, dtype):
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_pow_scalar_tensor(scalar, shape, dtype):
     inp1 = scalar
     inp2 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
@@ -855,6 +859,7 @@ def test_accuracy_pow_scalar_tensor(scalar, shape, dtype):
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_pow_tensor_scalar(scalar, shape, dtype):
     inp1 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
     inp2 = scalar

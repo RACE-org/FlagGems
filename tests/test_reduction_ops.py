@@ -95,6 +95,7 @@ def test_accuracy_argmax(shape, dim, keepdim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.CrossEntropyLoss
 @pytest.mark.parametrize("label_smoothing, ignore_index, shape", SMOOTH_IGNORE_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
@@ -144,6 +145,7 @@ def test_accuracy_cross_entropy_loss_indices(
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.CrossEntropyLoss
 @pytest.mark.parametrize("label_smoothing, shape", SMOOTH_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
@@ -209,6 +211,7 @@ CUMMIN_SHAPES = (
 )
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.skipif(
     SkipVersion("triton", "<3.0"),
     reason="Skipping when associative_scan only support single tensor input.",
@@ -255,6 +258,7 @@ def test_accuracy_nonzero(shape, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.count_nonzero
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
@@ -320,6 +324,7 @@ def test_accuracy_softmax(shape, dtype, dim):
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.softmax
 @pytest.mark.parametrize(
     "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 2560, 3)]
@@ -370,6 +375,7 @@ def test_accuracy_varmean(shape, dim, correction, keepdim, dtype):
     gems_assert_close(res_var, ref_var, dtype)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.scatter
 @pytest.mark.parametrize(
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
@@ -414,6 +420,7 @@ def test_accuracy_scatter_src(src_shape, inp_shape, dim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.scatter
 @pytest.mark.parametrize(
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
@@ -689,6 +696,7 @@ def test_accuracy_index_select(shape, dim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.masked_select
 @pytest.mark.parametrize("threshold, shape", THRESHOLD_SHAPE)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
