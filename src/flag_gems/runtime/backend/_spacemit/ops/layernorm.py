@@ -51,7 +51,7 @@ def layer_norm_common_kernel(
             boundary_check=[0],
         )
         mean += tl.sum(a)
-        var += tl.sum(pow(a, (2).to(X.type.element_ty)))
+        var += tl.sum(a * a)
 
         x_ptr_desc = tl.advance(x_ptr_desc, [TILE_N])
 
@@ -71,23 +71,6 @@ def layer_norm_common_kernel(
         order=[0],
     )
 
-    weight_ptr_desc = tl.make_block_ptr(
-        base=W,
-        shape=[N],
-        strides=[1],
-        offsets=[0],
-        block_shape=[TILE_N],
-        order=[0],
-    )
-
-    bias_ptr_desc = tl.make_block_ptr(
-        base=B,
-        shape=[N],
-        strides=[1],
-        offsets=[0],
-        block_shape=[TILE_N],
-        order=[0],
-    )
     y_ptr_desc = tl.make_block_ptr(
         base=Y,
         shape=[N],
@@ -109,6 +92,15 @@ def layer_norm_common_kernel(
         if W is None:
             w = 1
         else:
+            if off_n == 0:
+                weight_ptr_desc = tl.make_block_ptr(
+                    base=W,
+                    shape=[N],
+                    strides=[1],
+                    offsets=[0],
+                    block_shape=[TILE_N],
+                    order=[0],
+                )
             w = tl.load(
                 weight_ptr_desc,
                 boundary_check=[0],
@@ -118,13 +110,22 @@ def layer_norm_common_kernel(
         if B is None:
             b = 0
         else:
+            if off_n == 0:
+                bias_ptr_desc = tl.make_block_ptr(
+                    base=B,
+                    shape=[N],
+                    strides=[1],
+                    offsets=[0],
+                    block_shape=[TILE_N],
+                    order=[0],
+                )
             b = tl.load(
                 bias_ptr_desc,
                 boundary_check=[0],
             )
             bias_ptr_desc = tl.advance(bias_ptr_desc, [TILE_N])
 
-        y = x_hat * w + b
+        y = (x_hat * w + b).to(Y.type.element_ty)
         tl.store(
             y_ptr_desc,
             y,

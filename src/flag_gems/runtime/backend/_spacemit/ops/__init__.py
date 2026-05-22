@@ -9,7 +9,7 @@ from .bmm import bmm
 # from .conv_depthwise2d import _conv_depthwise2d
 # from .flash_attention import flash_attention, scaled_dot_product_attention
 from .gelu import gelu
-from .layernorm import layer_norm
+# from .layernorm import layer_norm
 from .mean import global_avg_pool, mean_dim
 from .mm import mm
 from .mv import mv
@@ -37,7 +37,7 @@ __all__ = [
     # "flash_attention",
     "gelu",
     "global_avg_pool",
-    "layer_norm",
+    # "layer_norm",
     "mean_dim",
     "mm",
     "mv",
