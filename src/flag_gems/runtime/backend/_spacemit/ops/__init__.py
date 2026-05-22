@@ -2,7 +2,6 @@
 from .argmax import argmax
 from .argmin import argmin
 from .bmm import bmm
-
 # from .conv1d import conv1d
 # from .conv2d import conv2d
 # from .thnn_conv2d import thnn_conv2d
@@ -25,12 +24,14 @@ from .sigmoid import sigmoid
 from .silu import silu
 from .softmax import softmax
 from .where import where_scalar_other, where_scalar_self, where_self, where_self_out
+from .batch_norm import batch_norm
 
 __all__ = [
     # "addmm",
     "argmax",
     "argmin",
     "bmm",
+    "batch_norm",
     # "conv1d",
     # "conv2d",
     # "_conv_depthwise2d",
