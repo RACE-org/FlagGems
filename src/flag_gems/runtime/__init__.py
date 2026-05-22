@@ -21,4 +21,24 @@ def get_triton_config(op_name):
     return config_loader.get_triton_config(op_name)
 
 
+def get_tuned_config(op_name):
+    return get_triton_config(op_name)
+
+
+def get_heuristic_config(op_name):
+    if device.vendor_name == "spacemit":
+        from .backend._spacemit.heuristics_config_utils import HEURISTICS_CONFIGS
+
+        return HEURISTICS_CONFIGS[op_name]
+    return {}
+
+
+def replace_customized_ops(_globals):
+    if device.vendor_name == "nvidia":
+        return
+    for item in backend.get_curent_device_extend_op(device.vendor_name):
+        fn_name, fn = item[:2]
+        _globals[fn_name] = fn
+
+
 __all__ = ["commom_utils", "backend", "device", "get_triton_config"]

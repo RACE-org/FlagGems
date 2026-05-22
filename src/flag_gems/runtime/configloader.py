@@ -21,6 +21,7 @@ class ConfigLoader(object):
             # primitive_yaml_config is simply the dictionary returned by yaml
             # and is reserved from being an attr for vendor customizability
             self.primitive_yaml_config = self.get_vendor_tune_config()
+            self.default_primitive_yaml_config = backend.get_tune_config("nvidia")
             # gen_key is an identifier that indicates whether the current config needs to be generated automatically
             self.gen_key = "gen"
             # loaded_triton_config is wrapped in triton.Config according to primitive_yaml_config
@@ -67,7 +68,9 @@ class ConfigLoader(object):
                 )
             else:
                 cur_key = iteration_keys[current_step]
-                if cur_key in param_config["META"]:
+                if cur_key == "META":
+                    config_var_key = param_config["META"]
+                elif cur_key in param_config["META"]:
                     config_var_key = param_config["META"][cur_key]
                 else:
                     config_var_key = param_config[cur_key]
@@ -77,7 +80,9 @@ class ConfigLoader(object):
                     key_config = gen_config[config_var_key]
                 for single_value in key_config:
                     new_config = copy.deepcopy(cur_config)
-                    if cur_key in param_config["META"]:
+                    if cur_key == "META":
+                        new_config["META"] = copy.deepcopy(single_value)
+                    elif cur_key in param_config["META"]:
                         new_config["META"][cur_key] = single_value
                     else:
                         new_config[cur_key] = single_value
@@ -92,8 +97,11 @@ class ConfigLoader(object):
     def to_gen_config(self, gen_config):
         param_config = gen_config["param_map"]
         meta_config = param_config["META"]
-        iteration_keys = list(meta_config) + list(param_config)
-        iteration_keys.remove("META")
+        if isinstance(meta_config, dict):
+            iteration_keys = list(meta_config) + list(param_config)
+            iteration_keys.remove("META")
+        else:
+            iteration_keys = list(param_config)
         current_config = {"META": {}}
         current_config.update(self.triton_config_default)
         return self._gen_impl(
@@ -107,7 +115,10 @@ class ConfigLoader(object):
         if op_name in self.loaded_triton_config:
             return self.loaded_triton_config[op_name]
 
-        current_op_configs = self.primitive_yaml_config[op_name]
+        if op_name in self.primitive_yaml_config:
+            current_op_configs = self.primitive_yaml_config[op_name]
+        else:
+            current_op_configs = self.default_primitive_yaml_config[op_name]
         configs = []
         if len(current_op_configs) == 0:
             return configs
