@@ -4,176 +4,50 @@ import torch
 
 from flag_gems.runtime.configloader import ConfigLoader
 
+_GEMM_CONFIG_0 = {
+    torch.float32: [{"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32}],
+    torch.float16: [{"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8}],
+}
+
+_GEMM_CONFIG_A03C = {
+    torch.float32: [{"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32}],
+    torch.float16: [{"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 16}],
+}
+
+_MM_CONFIG_A064 = {
+    torch.float32: [{"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32}],
+    torch.float16: [{"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8}],
+}
+
+_GEMM_CONFIG_F000 = {
+    torch.float32: [{"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32}],
+    torch.float16: [{"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2}],
+}
+
 LEGAL_CONFIGS = {
-    "0": {
-        "mm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 8},
-            ],
-            torch.float16: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 16},
-            ],
-        },
-        "attention": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "bmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "addmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-    },
     "0x503C": {
-        "mm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 8},
-            ],
-            torch.float16: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 16},
-            ],
-        },
-        "bmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "addmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "attention": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
+        "mm": _GEMM_CONFIG_0,
+        "bmm": _GEMM_CONFIG_0,
+        "addmm": _GEMM_CONFIG_0,
+        "attention": _GEMM_CONFIG_0,
     },
     "0xA03C": {
-        "mm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 8},
-            ],
-            torch.float16: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 16},
-            ],
-        },
-        "bmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "addmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "attention": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 8, "MICRO_N": 16, "MICRO_K": 16},
-            ],
-        },
+        "mm": _GEMM_CONFIG_A03C,
+        "bmm": _GEMM_CONFIG_A03C,
+        "addmm": _GEMM_CONFIG_A03C,
+        "attention": _GEMM_CONFIG_A03C,
     },
     "0xA064": {
-        "mm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "bmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "addmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
-        "attention": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 16, "MICRO_N": 32, "MICRO_K": 8},
-            ],
-        },
+        "mm": _MM_CONFIG_A064,
+        "bmm": _MM_CONFIG_A064,
+        "addmm": _MM_CONFIG_A064,
+        "attention": _MM_CONFIG_A064,
     },
     "0xF000": {
-        "mm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2},
-            ],
-        },
-        "bmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2},
-            ],
-        },
-        "addmm": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2},
-            ],
-        },
-        "attention": {
-            torch.float32: [
-                {"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32},
-            ],
-            torch.float16: [
-                {"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2},
-            ],
-        },
+        "mm": _GEMM_CONFIG_F000,
+        "bmm": _GEMM_CONFIG_F000,
+        "addmm": _GEMM_CONFIG_F000,
+        "attention": _GEMM_CONFIG_F000,
     },
 }
 
@@ -189,17 +63,27 @@ def get_current_arch_id():
     return arch_id
 
 
+def _strip_spacemit_suffix(op_name):
+    """Remove _spacemit suffix from op_name if present."""
+    if op_name.endswith("_spacemit"):
+        return op_name[:-9]  # Remove "_spacemit" (9 characters)
+    return op_name
+
+
 def validate_and_fix_config(config, arch_id, op_name, dtype):
+    # Remove _spacemit suffix for config lookup
+    op_key = _strip_spacemit_suffix(op_name)
+
     if arch_id not in LEGAL_CONFIGS:
         return config
 
-    if op_name not in LEGAL_CONFIGS[arch_id]:
+    if op_key not in LEGAL_CONFIGS[arch_id]:
         return config
 
-    legal_configs = LEGAL_CONFIGS[arch_id][op_name].get(dtype, [])
+    legal_configs = LEGAL_CONFIGS[arch_id][op_key].get(dtype, [])
 
     if not legal_configs:
-        legal_configs = LEGAL_CONFIGS[arch_id][op_name].get(torch.float32, [])
+        legal_configs = LEGAL_CONFIGS[arch_id][op_key].get(torch.float32, [])
 
     current_m = config.kwargs.get("MICRO_M", 0)
     current_k = config.kwargs.get("MICRO_K", 0)
@@ -245,7 +129,11 @@ def get_tuned_config(func):
                 for c in configs
                 if c is not None and getattr(c, "kwargs", None) is not None
             ]
-        if op_name in SUPPORTED_OPS and configs and len(configs) > 0:
+
+        # Remove _spacemit suffix for config lookup
+        op_key = _strip_spacemit_suffix(op_name)
+
+        if op_key in SUPPORTED_OPS and configs and len(configs) > 0:
             arch_id = get_current_arch_id()
 
             def make_pre_hook(config_obj):
@@ -259,12 +147,12 @@ def get_tuned_config(func):
 
                     if arch_id not in LEGAL_CONFIGS:
                         return
-                    if op_name not in LEGAL_CONFIGS[arch_id]:
+                    if op_key not in LEGAL_CONFIGS[arch_id]:
                         return
 
-                    legal_configs = LEGAL_CONFIGS[arch_id][op_name].get(dtype, [])
+                    legal_configs = LEGAL_CONFIGS[arch_id][op_key].get(dtype, [])
                     if not legal_configs:
-                        legal_configs = LEGAL_CONFIGS[arch_id][op_name].get(
+                        legal_configs = LEGAL_CONFIGS[arch_id][op_key].get(
                             torch.float32, []
                         )
                     if not legal_configs:

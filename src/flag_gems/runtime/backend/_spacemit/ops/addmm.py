@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 @libentry()
 @libtuner(
-    configs=runtime.get_tuned_config("addmm"),
+    configs=runtime.get_tuned_config("addmm_spacemit"),
     key=["M", "N", "K"],
 )
 @triton.jit

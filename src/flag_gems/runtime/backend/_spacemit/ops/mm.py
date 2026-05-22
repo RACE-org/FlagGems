@@ -9,7 +9,7 @@ from flag_gems.utils import libentry, libtuner
 
 @libentry()
 @libtuner(
-    configs=runtime.get_tuned_config("mm"),
+    configs=runtime.get_tuned_config("mm_spacemit"),
     key=["M", "N", "K"],
 )
 @triton.jit
