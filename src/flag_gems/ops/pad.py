@@ -156,6 +156,12 @@ def generate_destination_passing_padding_wrapper(
 
         code.newline()
 
+        code.writeline("# Check which dimensions have padding")
+        for i in range(rank):
+            code.writeline(
+                f"dim{i}_has_pad = pad_before[{i}] > 0 or pad_after[{i}] > 0"
+            )
+
         code.writeline("IS_CONSTANT = mode == 'constant'")
         code.writeline("IS_REFLECT = mode == 'reflect'")
         code.writeline("IS_REPLICATE = mode == 'replicate'")
@@ -190,6 +196,9 @@ def generate_destination_passing_padding_wrapper(
 
                     s = ", ".join(f"valid_dim{j}_end" for j in range(rank))
                     code.writeline(f"{s}, # valid dim end")
+
+                    s = ", ".join(f"bool(dim{i}_has_pad)" for i in range(rank))
+                    code.writeline(f"{s}, # dim has padding flags")
 
                     code.writeline("in0.numel(), ")
                     code.writeline("out0.numel(), ")
