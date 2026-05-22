@@ -21,7 +21,7 @@ _MM_CONFIG_A064 = {
 
 _GEMM_CONFIG_F000 = {
     torch.float32: [{"MICRO_M": 8, "MICRO_N": 32, "MICRO_K": 32}],
-    torch.float16: [{"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 2}],
+    torch.float16: [{"MICRO_M": 32, "MICRO_N": 32, "MICRO_K": 32}],
 }
 
 LEGAL_CONFIGS = {
