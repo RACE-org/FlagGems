@@ -191,15 +191,14 @@ def heuristics_for_tile_size(max_tile_size, *sizes):
 
 # This should be part of CodeGenConfig
 def heuristics_for_num_warps(tile_size):
-    if tile_size < 2048:
+    if flag_gems.vendor_name == "fant":
+        return 1
+    elif tile_size < 2048:
         return 4
     elif tile_size < 4096:
         return 8
     else:
-        if flag_gems.vendor_name == "fant":
-            return 4
-        else:
-            return 16
+        return 16
 
 
 def dim_compress(inp, dims):

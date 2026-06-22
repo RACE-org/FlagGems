@@ -42,7 +42,7 @@ def fill_tensor(input, value):
     logging.debug("GEMS FILL")
     out = torch.empty_like(input)
     N = out.numel()
-    BLOCK_SIZE = 512
+    BLOCK_SIZE = 1024
     grid = triton.cdiv(N, BLOCK_SIZE)
 
     with torch_device_fn.device(input.device):
@@ -54,7 +54,7 @@ def fill_scalar(input, value):
     logging.debug("GEMS FILL")
     out = torch.empty_like(input)
     N = out.numel()
-    BLOCK_SIZE = 512
+    BLOCK_SIZE = 1024
     value = float(value)
     grid = triton.cdiv(N, BLOCK_SIZE)
 

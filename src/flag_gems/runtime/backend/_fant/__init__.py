@@ -27,6 +27,17 @@ def get_register_op_config():
         fill_tensor,
         arange,
         arange_start,
+        constant_pad_nd,
+        full,
+        full_like,
+        ones,
+        ones_like,
+        pad,
+        repeat,
+        tile,
+        zeros,
+        zeros_like,
+        multinomial,
     )
     return (
         ("native_dropout", native_dropout, Autograd.enable),
@@ -48,6 +59,17 @@ def get_register_op_config():
         ("arange.start_step", arange_start, Autograd.disable),
         ("arange.start", arange_start, Autograd.disable),
         ("arange", arange, Autograd.disable),
+        ("full", full, Autograd.disable),
+        ("full_like", full_like, Autograd.disable),
+        ("ones", ones, Autograd.disable),
+        ("ones_like", ones_like, Autograd.disable),
+        ("constant_pad_nd", constant_pad_nd, Autograd.disable),
+        ("pad", pad, Autograd.enable),
+        ("tile", tile, Autograd.enable),
+        ("zeros", zeros, Autograd.disable),
+        ("zeros_like", zeros_like, Autograd.disable),
+        ("repeat", repeat, Autograd.disable),
+        ("multinomial", multinomial, Autograd.disable),
     )
 
 def get_unused_op():
