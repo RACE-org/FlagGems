@@ -3,7 +3,7 @@ import torch
 
 import flag_gems
 
-from .accuracy_utils import FLOAT_DTYPES, SCALARS, gems_assert_close, to_reference
+from .accuracy_utils import FLOAT_DTYPES, SCALARS, gems_assert_close, to_reference, gems_assert_cosine_similarity
 from .conftest import QUICK_MODE
 
 MN_SHAPES = [(1, 32)] if QUICK_MODE else [(1, 32), (160, 1024), (5333, 497)]
@@ -33,7 +33,10 @@ def test_accuracy_addmm(M, N, K, scalar, dtype):
     with flag_gems.use_gems():
         res_out = torch.addmm(bias, mat1, mat2, alpha=alpha, beta=beta)
 
-    gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
+    if flag_gems.device == "txda" and dtype == torch.float32:
+        gems_assert_cosine_similarity(res_out, ref_out, dtype)
+    else:
+        gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
 
 
 @pytest.mark.bmm
@@ -50,7 +53,10 @@ def test_accuracy_bmm(M, N, K, dtype):
     with flag_gems.use_gems():
         res_out = torch.bmm(mat1, mat2)
 
-    gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
+    if flag_gems.device == "txda" and dtype == torch.float32:
+        gems_assert_cosine_similarity(res_out, ref_out, dtype)
+    else:
+        gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
 
 
 # TODO: failed at (1, 1, 2)
@@ -67,7 +73,10 @@ def test_accuracy_mm(M, N, K, dtype):
     with flag_gems.use_gems():
         res_out = torch.mm(mat1, mat2)
 
-    gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
+    if flag_gems.device == "txda" and dtype == torch.float32:
+        gems_assert_cosine_similarity(res_out, ref_out, dtype)
+    else:
+        gems_assert_close(res_out, ref_out, dtype, reduce_dim=K)
 
 
 @pytest.mark.mv

@@ -66,11 +66,14 @@ class DeviceDetector(object):
         vendor_infos = backend.get_vendor_infos()
         for single_info in vendor_infos:
             # Get the vendor information by running system commands.
-            result = subprocess.run(
-                [single_info.device_query_cmd], capture_output=True, text=True
-            )
-            if result.returncode == 0:
-                return single_info
+            try:
+                result = subprocess.run(
+                    [single_info.device_query_cmd], capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    return single_info
+            except Exception:
+                pass
         error.device_not_found()
 
     def get_vendor_name(self):

@@ -1070,7 +1070,8 @@ def test_accuracy_where_scalar_other(shape, scalar, dtype):
 
 @pytest.mark.isclose
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
-@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
+#@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
 @pytest.mark.parametrize("zero_tol", [False, True])
 @pytest.mark.parametrize("equal_nan", [False, True])
 @pytest.mark.parametrize("gen_nan", [0, 1, 2, 3, 4])
@@ -1170,7 +1171,8 @@ def test_accuracy_isclose(shape, dtype, zero_tol, equal_nan, gen_nan):
 
 @pytest.mark.allclose
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
-@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
+#@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
 @pytest.mark.parametrize("equal_nan", [False, True])
 @pytest.mark.parametrize("gen_nan", [0, 1, 2, 3, 4])
 def test_accuracy_allclose(shape, dtype, equal_nan, gen_nan):

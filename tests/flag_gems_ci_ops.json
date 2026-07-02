@@ -1,0 +1,1221 @@
+{
+    "time_consume_ops": [
+        "isin",
+        "sort",
+        "unique2",
+        "conv2d",
+        "count_nonzero",
+        "upsample_bicubic2d_aa",
+        "upsample_nearest2d",
+        "quantile"
+    ],
+    "hardware_bug_ops": [
+        "arange",
+        "cross_entropy_loss",
+        "vector_norm",
+        "mse_loss",
+        "to_dtype",
+        "floor_divide",
+        "index_put_",
+        "pad",
+        "constant_pad_nd",
+        "weight_norm",
+        "isin",
+        "unique2",
+        "sort",
+        "quantile",
+        "conv2d",
+        "upsample_bicubic2d_aa",
+        "upsample_nearest2d"
+    ],
+    "race_ops": [
+        "abs",
+        "bitwise_not",
+        "cos",
+        "native_dropout",
+        "erf",
+        "exp",
+        "flip",
+        "gelu",
+        "isfinite",
+        "isinf",
+        "isnan",
+        "logical_not",
+        "neg",
+        "reciprocal",
+        "relu",
+        "repeat",
+        "rsqrt",
+        "sigmoid",
+        "silu",
+        "sin",
+        "tanh",
+        "tile",
+        "triu",
+        "add",
+        "bitwise_and_tensor",
+        "bitwise_or_tensor",
+        "clamp",
+        "clamp_tensor",
+        "true_divide",
+        "floor_divide",
+        "remainder",
+        "eq",
+        "ge",
+        "gt",
+        "isclose",
+        "allclose",
+        "le",
+        "logical_and",
+        "logical_or",
+        "logical_xor",
+        "lt",
+        "maximum",
+        "minimum",
+        "mul",
+        "ne",
+        "pow",
+        "sub",
+        "where",
+        "addmm",
+        "bmm",
+        "mm",
+        "mv",
+        "outer",
+        "group_norm",
+        "instance_norm",
+        "layer_norm",
+        "vector_norm",
+        "weight_norm_interface",
+        "weight_norm",
+        "all",
+        "all_dim",
+        "amax",
+        "any",
+        "any_dim",
+        "argmax",
+        "count_nonzero",
+        "cross_entropy_loss",
+        "cummin",
+        "cumsum",
+        "gather",
+        "index_add",
+        "index_select",
+        "log_softmax",
+        "masked_select",
+        "max",
+        "max_dim",
+        "mean",
+        "mean_dim",
+        "min",
+        "min_dim",
+        "nonzero",
+        "prod",
+        "prod_dim",
+        "scatter",
+        "select_scatter",
+        "slice_scatter",
+        "softmax",
+        "sum",
+        "sum_dim",
+        "var_mean",
+        "arange",
+        "fill_scalar",
+        "full",
+        "full_like",
+        "masked_fill",
+        "ones",
+        "ones_like",
+        "rand",
+        "rand_like",
+        "randn",
+        "randn_like",
+        "randperm",
+        "zeros",
+        "zeros_like",
+        "pad",
+        "constant_pad_nd",
+        "exponential",
+        "normal_tensor_tensor",
+        "uniform",
+        "upsample_bicubic2d_aa",
+        "unique2",
+        "cat",
+        "diag",
+        "diag_embed",
+        "diagonal_backward",
+        "embedding",
+        "hstack",
+        "isin",
+        "multinomial",
+        "repeat_interleave_self_int",
+        "repeat_interleave_tensor",
+        "repeat_interleave_self_tensor",
+        "resolve_conj",
+        "resolve_neg",
+        "sort",
+        "stack",
+        "topk",
+        "upsample_nearest2d",
+        "vstack"
+    ],
+    "race_perf_ops": [
+        "abs",
+        "bitwise_not",
+        "cos",
+        "# native_dropout",
+        "erf",
+        "exp",
+        "flip",
+        "gelu",
+        "isfinite",
+        "isinf",
+        "isnan",
+        "logical_not",
+        "neg",
+        "reciprocal",
+        "relu",
+        "repeat",
+        "rsqrt",
+        "sigmoid",
+        "silu",
+        "sin",
+        "tanh",
+        "tile",
+        "triu",
+        "add",
+        "bitwise_and_tensor",
+        "bitwise_or_tensor",
+        "clamp",
+        "clamp_tensor",
+        "true_divide",
+        "floor_divide",
+        "remainder",
+        "eq",
+        "ge",
+        "gt",
+        "isclose",
+        "allclose",
+        "le",
+        "logical_and",
+        "logical_or",
+        "logical_xor",
+        "lt",
+        "maximum",
+        "minimum",
+        "mul",
+        "ne",
+        "pow",
+        "sub",
+        "where",
+        "addmm",
+        "bmm",
+        "mm",
+        "mv",
+        "outer",
+        "group_norm",
+        "instance_norm",
+        "layer_norm",
+        "vector_norm",
+        "# weight_norm_interface",
+        "weight_norm",
+        "all",
+        "all_dim",
+        "amax",
+        "any",
+        "any_dim",
+        "argmax",
+        "# count_nonzero",
+        "cross_entropy_loss",
+        "cummin",
+        "cumsum",
+        "gather",
+        "index_add",
+        "index_select",
+        "log_softmax",
+        "masked_select",
+        "max",
+        "max_dim",
+        "mean",
+        "mean_dim",
+        "min",
+        "min_dim",
+        "nonzero",
+        "prod",
+        "prod_dim",
+        "scatter",
+        "select_scatter",
+        "slice_scatter",
+        "softmax",
+        "sum",
+        "sum_dim",
+        "var_mean",
+        "arange",
+        "fill_scalar",
+        "full",
+        "full_like",
+        "masked_fill",
+        "ones",
+        "ones_like",
+        "# rand",
+        "# rand_like",
+        "# randn",
+        "# randn_like",
+        "randperm",
+        "zeros",
+        "zeros_like",
+        "# pad",
+        "# constant_pad_nd",
+        "# exponential",
+        "normal_tensor_tensor",
+        "# uniform",
+        "# upsample_bicubic2d_aa",
+        "# unique2",
+        "cat",
+        "diag",
+        "diag_embed",
+        "diagonal_backward",
+        "embedding",
+        "hstack",
+        "# isin",
+        "multinomial",
+        "repeat_interleave_self_int",
+        "repeat_interleave_tensor",
+        "repeat_interleave_self_tensor",
+        "# resolve_conj",
+        "resolve_neg",
+        "# sort",
+        "stack",
+        "# topk",
+        "# upsample_nearest2d",
+        "vstack"
+    ],
+    "race_excluded_ops": [
+        "apply_rotary_pos_emb",
+        "conv1d",
+        "conv2d",
+        "conv_depthwise2d",
+        "dropout",
+        "gelu_and_mul",
+        "linear",
+        "matmul",
+        "native_group_norm",
+        "native_instance_norm",
+        "native_layer_norm",
+        "or_",
+        "rms_norm",
+        "rsub",
+        "silu_and_mul",
+        "skip_layer_norm",
+        "skip_rms_norm",
+        "trunc_divide"
+    ],
+    "all_tasks": {
+        "abs": [
+            "test_unary_pointwise_ops.py::test_accuracy_abs"
+        ],
+        "bitwise_not": [
+            "test_unary_pointwise_ops.py::test_accuracy_bitwisenot"
+        ],
+        "cos": [
+            "test_unary_pointwise_ops.py::test_accuracy_cos"
+        ],
+        "native_dropout": [
+            "test_special_ops.py::test_accuracy_dropout"
+        ],
+        "erf": [
+            "test_unary_pointwise_ops.py::test_accuracy_erf"
+        ],
+        "exp": [
+            "test_unary_pointwise_ops.py::test_accuracy_exp"
+        ],
+        "flip": [
+            "test_unary_pointwise_ops.py::test_accuracy_flip_general",
+            "test_unary_pointwise_ops.py::test_accuracy_flip_with_non_dense_input"
+        ],
+        "gelu": [
+            "test_unary_pointwise_ops.py::test_accuracy_gelu"
+        ],
+        "isfinite": [
+            "test_unary_pointwise_ops.py::test_accuracy_isfinite"
+        ],
+        "isinf": [
+            "test_unary_pointwise_ops.py::test_accuracy_isinf"
+        ],
+        "isnan": [
+            "test_unary_pointwise_ops.py::test_accuracy_isnan"
+        ],
+        "logical_not": [
+            "test_unary_pointwise_ops.py::test_accuracy_logical_not"
+        ],
+        "neg": [
+            "test_unary_pointwise_ops.py::test_accuracy_neg"
+        ],
+        "reciprocal": [
+            "test_unary_pointwise_ops.py::test_accuracy_reciprocal"
+        ],
+        "relu": [
+            "test_unary_pointwise_ops.py::test_accuracy_relu"
+        ],
+        "repeat": [
+            "test_unary_pointwise_ops.py::test_accuracy_repeat"
+        ],
+        "rsqrt": [
+            "test_unary_pointwise_ops.py::test_accuracy_rsqrt"
+        ],
+        "sigmoid": [
+            "test_unary_pointwise_ops.py::test_accuracy_sigmoid"
+        ],
+        "silu": [
+            "test_unary_pointwise_ops.py::test_accuracy_silu"
+        ],
+        "sin": [
+            "test_unary_pointwise_ops.py::test_accuracy_sin"
+        ],
+        "tanh": [
+            "test_unary_pointwise_ops.py::test_accuracy_tanh"
+        ],
+        "tile": [
+            "test_unary_pointwise_ops.py::test_accuracy_tile"
+        ],
+        "triu": [
+            "test_unary_pointwise_ops.py::test_accuracy_triu"
+        ],
+        "add": [
+            "test_binary_pointwise_ops.py::test_accuracy_add",
+            "test_binary_pointwise_ops.py::test_accuracy_add_tensor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_add_scalar_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_add_scalar_scalar"
+        ],
+        "bitwise_and_tensor": [
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseand"
+        ],
+        "bitwise_or_tensor": [
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor"
+        ],
+        "clamp": [
+            "test_binary_pointwise_ops.py::test_accuracy_clamp"
+        ],
+        "clamp_tensor": [
+            "test_binary_pointwise_ops.py::test_accuracy_clamp_tensor"
+        ],
+        "true_divide": [
+            "test_binary_pointwise_ops.py::test_accuracy_div_tensor_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_div_tensor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_div_scalar_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_div_scalar_scalar"
+        ],
+        "floor_divide": [
+            "test_binary_pointwise_ops.py::test_accuracy_floor_div_int",
+            "test_binary_pointwise_ops.py::test_accuracy_floor_divide_scalar_scalar"
+        ],
+        "remainder": [
+            "test_binary_pointwise_ops.py::test_accuracy_remainder"
+        ],
+        "eq": [
+            "test_binary_pointwise_ops.py::test_accuracy_eq"
+        ],
+        "ge": [
+            "test_binary_pointwise_ops.py::test_accuracy_ge"
+        ],
+        "gt": [
+            "test_binary_pointwise_ops.py::test_accuracy_gt"
+        ],
+        "isclose": [
+            "test_binary_pointwise_ops.py::test_accuracy_isclose"
+        ],
+        "allclose": [
+            "test_binary_pointwise_ops.py::test_accuracy_allclose"
+        ],
+        "le": [
+            "test_binary_pointwise_ops.py::test_accuracy_le"
+        ],
+        "logical_and": [
+            "test_binary_pointwise_ops.py::test_accuracy_logical_and"
+        ],
+        "logical_or": [
+            "test_binary_pointwise_ops.py::test_accuracy_logical_or"
+        ],
+        "logical_xor": [
+            "test_binary_pointwise_ops.py::test_accuracy_logical_xor"
+        ],
+        "lt": [
+            "test_binary_pointwise_ops.py::test_accuracy_lt"
+        ],
+        "maximum": [
+            "test_binary_pointwise_ops.py::test_accuracy_maximum"
+        ],
+        "minimum": [
+            "test_binary_pointwise_ops.py::test_accuracy_minimum"
+        ],
+        "mul": [
+            "test_binary_pointwise_ops.py::test_accuracy_mul",
+            "test_binary_pointwise_ops.py::test_accuracy_mul_tensor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_mul_scalar_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_mul_scalar_scalar"
+        ],
+        "ne": [
+            "test_binary_pointwise_ops.py::test_accuracy_ne"
+        ],
+        "pow": [
+            "test_binary_pointwise_ops.py::test_accuracy_pow"
+        ],
+        "sub": [
+            "test_binary_pointwise_ops.py::test_accuracy_sub",
+            "test_binary_pointwise_ops.py::test_accuracy_sub_tensor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_sub_scalar_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_sub_scalar_scalar"
+        ],
+        "where": [
+            "test_binary_pointwise_ops.py::test_accuracy_where_self"
+        ],
+        "addmm": [
+            "test_blas_ops.py::test_accuracy_addmm"
+        ],
+        "bmm": [
+            "test_blas_ops.py::test_accuracy_bmm"
+        ],
+        "mm": [
+            "test_blas_ops.py::test_accuracy_mm"
+        ],
+        "mv": [
+            "test_blas_ops.py::test_accuracy_mv"
+        ],
+        "outer": [
+            "test_blas_ops.py::test_accuracy_outer"
+        ],
+        "group_norm": [
+            "test_norm_ops.py::test_accuracy_groupnorm"
+        ],
+        "instance_norm": [
+            "test_norm_ops.py::test_accuracy_instancenorm"
+        ],
+        "layer_norm": [
+            "test_norm_ops.py::test_accuracy_layernorm"
+        ],
+        "vector_norm": [
+            "test_norm_ops.py::test_accuracy_vectornorm"
+        ],
+        "weight_norm_interface": [
+            "test_norm_ops.py::test_accuracy_weightnorm_interface"
+        ],
+        "weight_norm": [
+            "test_norm_ops.py::test_accuracy_weightnorm"
+        ],
+        "all": [
+            "test_general_reduction_ops.py::test_accuracy_all_without_dim"
+        ],
+        "all_dim": [
+            "test_general_reduction_ops.py::test_accuracy_all_dims"
+        ],
+        "amax": [
+            "test_reduction_ops.py::test_accuracy_amax"
+        ],
+        "any": [
+            "test_general_reduction_ops.py::test_accuracy_any_without_dim"
+        ],
+        "any_dim": [
+            "test_general_reduction_ops.py::test_accuracy_any_dims"
+        ],
+        "argmax": [
+            "test_reduction_ops.py::test_accuracy_argmax"
+        ],
+        "count_nonzero": [
+            "test_reduction_ops.py::test_accuracy_count_nonzero"
+        ],
+        "cross_entropy_loss": [
+            "test_reduction_ops.py::test_accuracy_cross_entropy_loss_indices",
+            "test_reduction_ops.py::test_accuracy_cross_entropy_loss_probabilities"
+        ],
+        "cummin": [
+            "test_reduction_ops.py::test_accuracy_cummin"
+        ],
+        "cumsum": [
+            "test_reduction_ops.py::test_accuracy_cumsum"
+        ],
+        "gather": [
+            "test_reduction_ops.py::test_accuracy_gather"
+        ],
+        "index_add": [
+            "test_reduction_ops.py::test_accuracy_index_add"
+        ],
+        "index_select": [
+            "test_reduction_ops.py::test_accuracy_index_select"
+        ],
+        "log_softmax": [
+            "test_reduction_ops.py::test_accuracy_log_softmax"
+        ],
+        "masked_select": [
+            "test_reduction_ops.py::test_accuracy_masked_select"
+        ],
+        "max": [
+            "test_general_reduction_ops.py::test_accuracy_max_without_dim",
+            "test_general_reduction_ops.py::test_accuracy_max_without_dim_uncontiguous"
+        ],
+        "max_dim": [
+            "test_general_reduction_ops.py::test_accuracy_max_dim",
+            "test_general_reduction_ops.py::test_accuracy_max_dim_big_shape"
+        ],
+        "mean": [
+            "test_general_reduction_ops.py::test_accuracy_mean_without_dim"
+        ],
+        "mean_dim": [
+            "test_general_reduction_ops.py::test_accuracy_mean_dim"
+        ],
+        "min": [
+            "test_general_reduction_ops.py::test_accuracy_min_without_dim"
+        ],
+        "min_dim": [
+            "test_general_reduction_ops.py::test_accuracy_min_dim"
+        ],
+        "nonzero": [
+            "test_reduction_ops.py::test_accuracy_nonzero"
+        ],
+        "prod": [
+            "test_general_reduction_ops.py::test_accuracy_prod_without_dim"
+        ],
+        "prod_dim": [
+            "test_general_reduction_ops.py::test_accuracy_prod_dim"
+        ],
+        "scatter": [
+            "test_reduction_ops.py::test_accuracy_scatter_src",
+            "test_reduction_ops.py::test_accuracy_scatter_add",
+            "test_reduction_ops.py::test_accuracy_scatter_mul"
+        ],
+        "select_scatter": [
+            "test_reduction_ops.py::test_accuracy_select_scatter",
+            "test_reduction_ops.py::test_accuracy_select_scatter_with_self_overlapping_input"
+        ],
+        "slice_scatter": [
+            "test_reduction_ops.py::test_accuracy_slice_scatter",
+            "test_reduction_ops.py::test_accuracy_slice_scatter_with_self_overlapping_input"
+        ],
+        "softmax": [
+            "test_reduction_ops.py::test_accuracy_softmax",
+            "test_reduction_ops.py::test_accuracy_softmax_with_neg_inf"
+        ],
+        "sum": [
+            "test_general_reduction_ops.py::test_accuracy_sum_without_dim"
+        ],
+        "sum_dim": [
+            "test_general_reduction_ops.py::test_accuracy_sum_dim"
+        ],
+        "var_mean": [
+            "test_reduction_ops.py::test_accuracy_varmean"
+        ],
+        "arange": [
+            "test_special_ops.py::test_arange"
+        ],
+        "fill_scalar": [
+            "test_special_ops.py::test_fill"
+        ],
+        "full": [
+            "test_tensor_constructor_ops.py::test_accuracy_full"
+        ],
+        "full_like": [
+            "test_tensor_constructor_ops.py::test_accuracy_full_like"
+        ],
+        "masked_fill": [
+            "test_unary_pointwise_ops.py::test_accuracy_masked_fill"
+        ],
+        "ones": [
+            "test_tensor_constructor_ops.py::test_accuracy_ones"
+        ],
+        "ones_like": [
+            "test_tensor_constructor_ops.py::test_accuracy_ones_like"
+        ],
+        "rand": [
+            "test_tensor_constructor_ops.py::test_accuracy_rand"
+        ],
+        "rand_like": [
+            "test_tensor_constructor_ops.py::test_accuracy_rand_like"
+        ],
+        "randn": [
+            "test_tensor_constructor_ops.py::test_accuracy_randn"
+        ],
+        "randn_like": [
+            "test_tensor_constructor_ops.py::test_accuracy_randn_like"
+        ],
+        "randperm": [
+            "test_tensor_constructor_ops.py::test_accuracy_randperm"
+        ],
+        "zeros": [
+            "test_tensor_constructor_ops.py::test_accuracy_zeros"
+        ],
+        "zeros_like": [
+            "test_tensor_constructor_ops.py::test_accuracy_zeros_like"
+        ],
+        "pad": [
+            "test_special_ops.py::test_pad"
+        ],
+        "constant_pad_nd": [
+            "test_special_ops.py::test_pad"
+        ],
+        "exponential": [
+            "test_distribution_ops.py::test_accuracy_exponential_"
+        ],
+        "normal_tensor_tensor": [
+            "test_distribution_ops.py::test_accuracy_normal"
+        ],
+        "uniform": [
+            "test_distribution_ops.py::test_accuracy_uniform"
+        ],
+        "upsample_bicubic2d_aa": [
+            "test_special_ops.py::test_upsample_bicubic2d_aa"
+        ],
+        "unique2": [
+            "test_special_ops.py::test_accuracy_unique"
+        ],
+        "cat": [
+            "test_special_ops.py::test_accuracy_cat",
+            "test_special_ops.py::test_accuracy_cat_empty_tensor"
+        ],
+        "diag": [
+            "test_special_ops.py::test_accuracy_diag"
+        ],
+        "diag_embed": [
+            "test_special_ops.py::test_accuracy_diag_embed"
+        ],
+        "diagonal_backward": [
+            "test_special_ops.py::test_accuracy_diagonal_backward"
+        ],
+        "embedding": [
+            "test_special_ops.py::test_embedding"
+        ],
+        "hstack": [
+            "test_special_ops.py::test_accuracy_hstack",
+            "test_special_ops.py::test_exception_hstack"
+        ],
+        "isin": [
+            "test_special_ops.py::test_accuracy_isin"
+        ],
+        "multinomial": [
+            "test_special_ops.py::test_accuracy_multinomial_with_replacement",
+            "test_special_ops.py::test_accuracy_multinomial_without_replacement"
+        ],
+        "repeat_interleave_self_int": [
+            "test_special_ops.py::test_accuracy_repeat_interleave_self_int",
+            "test_special_ops.py::test_accuracy_repeat_interleave_self_int_non_contiguous"
+        ],
+        "repeat_interleave_tensor": [
+            "test_special_ops.py::test_accuracy_repeat_interleave_tensor"
+        ],
+        "repeat_interleave_self_tensor": [
+            "test_special_ops.py::test_accuracy_repeat_interleave_self_tensor"
+        ],
+        "resolve_conj": [
+            "test_special_ops.py::test_accuracy_resolve_conj"
+        ],
+        "resolve_neg": [
+            "test_special_ops.py::test_accuracy_resolve_neg"
+        ],
+        "sort": [
+            "test_special_ops.py::test_sort"
+        ],
+        "stack": [
+            "test_special_ops.py::test_accuracy_stack"
+        ],
+        "topk": [
+            "test_special_ops.py::test_topk"
+        ],
+        "upsample_nearest2d": [
+            "test_special_ops.py::test_upsample_nearest2d"
+        ],
+        "vstack": [
+            "test_special_ops.py::test_accuracy_vstack"
+        ],
+        "apply_rotary_pos_emb": [
+            "test_special_ops.py::test_apply_rotary_pos_emb"
+        ],
+        "conv1d": [
+            "test_reduction_ops.py::test_accuracy_conv1d"
+        ],
+        "conv2d": [
+            "test_reduction_ops.py::test_accuracy_conv2d"
+        ],
+        "conv_depthwise2d": [
+            "test_reduction_ops.py::test_accuracy_depthwise2d"
+        ],
+        "dropout": [
+            "test_special_ops.py::test_accuracy_dropout"
+        ],
+        "gelu_and_mul": [
+            "test_binary_pointwise_ops.py::test_accuracy_gelu_and_mul"
+        ],
+        "linear": [
+            "test_blas_ops.py::test_accuracy_addmm"
+        ],
+        "matmul": [
+            "test_blas_ops.py::test_accuracy_addmm"
+        ],
+        "native_group_norm": [
+            "test_norm_ops.py::test_accuracy_groupnorm"
+        ],
+        "native_instance_norm": [
+            "test_norm_ops.py::test_accuracy_instancenorm"
+        ],
+        "native_layer_norm": [
+            "test_norm_ops.py::test_accuracy_layernorm"
+        ],
+        "or_": [
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor",
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor_scalar_tensor"
+        ],
+        "rms_norm": [
+            "test_norm_ops.py::test_accuracy_rmsnorm"
+        ],
+        "rsub": [
+            "test_binary_pointwise_ops.py::test_accuracy_rsub"
+        ],
+        "silu_and_mul": [
+            "test_binary_pointwise_ops.py::test_accuracy_silu_and_mul"
+        ],
+        "skip_layer_norm": [
+            "test_norm_ops.py::test_accuracy_skip_layernorm"
+        ],
+        "skip_rms_norm": [
+            "test_norm_ops.py::test_accuracy_skip_rmsnorm"
+        ],
+        "trunc_divide": [
+            "test_binary_pointwise_ops.py::test_accuracy_trunc_div",
+            "test_binary_pointwise_ops.py::test_accuracy_trunc_divide_scalar_scalar"
+        ]
+    },
+    "race_ops_excluded_tasks": {
+        "multinomial": [
+            "test_distribution_ops.py::test_accuracy_multinomial_with_replacement"
+        ],
+        "le": [
+            "test_binary_pointwise_ops.py::test_accuracy_le_scalar"
+        ],
+        "where": [
+            "test_binary_pointwise_ops.py::test_accuracy_where_scalar_other",
+            "test_binary_pointwise_ops.py::test_accuracy_where_scalar_self",
+            "test_binary_pointwise_ops.py::test_accuracy_where_self_out",
+            "test_binary_pointwise_ops.py::test_accuracy_where_self_out_cross_device"
+        ],
+        "bitwise_or_tensor": [
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseor_scalar_tensor"
+        ],
+        "floor_divide": [
+            "test_binary_pointwise_ops.py::test_accuracy_floor_div_float"
+        ],
+        "gt": [
+            "test_binary_pointwise_ops.py::test_accuracy_gt_scalar"
+        ],
+        "pow": [
+            "test_binary_pointwise_ops.py::test_accuracy_pow_scalar_tensor",
+            "test_binary_pointwise_ops.py::test_accuracy_pow_tensor_scalar"
+        ],
+        "eq": [
+            "test_binary_pointwise_ops.py::test_accuracy_eq_scalar"
+        ],
+        "bitwise_and_tensor": [
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseand_scalar",
+            "test_binary_pointwise_ops.py::test_accuracy_bitwiseand_scalar_tensor"
+        ],
+        "masked_fill": [
+            "test_unary_pointwise_ops.py::test_accuracy_masked_fill_"
+        ],
+        "ne": [
+            "test_binary_pointwise_ops.py::test_accuracy_ne_scalar"
+        ],
+        "ge": [
+            "test_binary_pointwise_ops.py::test_accuracy_ge_scalar"
+        ],
+        "lt": [
+            "test_binary_pointwise_ops.py::test_accuracy_lt_scalar"
+        ]
+    },
+    "all_perf_tasks": {
+        "abs": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[abs-abs-dtypes0]"
+        ],
+        "bitwise_not": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[bitwise_not-bitwise_not-dtypes16]"
+        ],
+        "cos": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[cos-cos-dtypes13]"
+        ],
+        "native_dropout": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[native_dropout-torch_op7-dtypes7]"
+        ],
+        "erf": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[erf-erf-dtypes1]"
+        ],
+        "exp": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[exp-exp-dtypes2]"
+        ],
+        "flip": [
+            "test_generic_pointwise_perf.py::test_generic_pointwise_benchmark[flip-flip-flip_input_fn-dtypes1]"
+        ],
+        "gelu": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[gelu-gelu-dtypes9]"
+        ],
+        "isfinite": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[isfinite-isfinite-dtypes19]"
+        ],
+        "isinf": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[isinf-isinf-dtypes17]"
+        ],
+        "isnan": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[isnan-isnan-dtypes18]"
+        ],
+        "logical_not": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[logical_not-logical_not-dtypes6]"
+        ],
+        "neg": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[neg-neg-dtypes3]"
+        ],
+        "reciprocal": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[reciprocal-reciprocal-dtypes4]"
+        ],
+        "relu": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[relu-relu-dtypes10]"
+        ],
+        "repeat": [
+            "test_tensor_concat_perf.py::test_tensor_repeat_benchmark[repeat-repeat-repeat_input_fn-dtypes1]"
+        ],
+        "rsqrt": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[rsqrt-rsqrt-dtypes5]"
+        ],
+        "sigmoid": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[sigmoid-sigmoid-dtypes11]"
+        ],
+        "silu": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[silu-silu-dtypes12]"
+        ],
+        "sin": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[sin-sin-dtypes14]"
+        ],
+        "tanh": [
+            "test_unary_pointwise_perf.py::test_general_unary_pointwise_perf[tanh-tanh-dtypes15]"
+        ],
+        "tile": [
+            "test_tensor_concat_perf.py::test_tensor_repeat_benchmark[tile-tile-tile_input_fn-dtypes0]"
+        ],
+        "triu": [
+            "test_generic_pointwise_perf.py::test_generic_pointwise_benchmark_exclude_1d[triu-triu-unary_input_fn-dtypes0]"
+        ],
+        "add": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[add-add-dtypes0]"
+        ],
+        "bitwise_and_tensor": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[bitwise_and-bitwise_and-dtypes19]"
+        ],
+        "bitwise_or_tensor": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[bitwise_or-bitwise_or-dtypes20]"
+        ],
+        "clamp": [
+            "test_generic_pointwise_perf.py::test_generic_pointwise_benchmark[clamp-clamp-clamp_input_fn-dtypes0]"
+        ],
+        "clamp_tensor": [
+            "test_generic_pointwise_perf.py::test_generic_pointwise_benchmark[clamp-clamp-clamp_input_fn-dtypes0]"
+        ],
+        "true_divide": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[div-div-dtypes1]"
+        ],
+        "floor_divide": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[floor_divide-floor_divide-dtypes5]"
+        ],
+        "remainder": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[remainder-remainder-dtypes6]"
+        ],
+        "eq": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[eq-eq-dtypes11]"
+        ],
+        "ge": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[ge-ge-dtypes12]"
+        ],
+        "gt": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[gt-gt-dtypes13]"
+        ],
+        "isclose": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[isclose-isclose-dtypes22]"
+        ],
+        "allclose": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[allclose-allclose-dtypes23]"
+        ],
+        "le": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[le-le-dtypes14]"
+        ],
+        "logical_and": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[logical_and-logical_and-dtypes9]"
+        ],
+        "logical_or": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[logical_or-logical_or-dtypes8]"
+        ],
+        "logical_xor": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[logical_xor-logical_xor-dtypes10]"
+        ],
+        "lt": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[lt-lt-dtypes15]"
+        ],
+        "maximum": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[maximum-maximum-dtypes17]"
+        ],
+        "minimum": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[minimum-minimum-dtypes18]"
+        ],
+        "mul": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[mul-mul-dtypes2]"
+        ],
+        "ne": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[ne-ne-dtypes16]"
+        ],
+        "pow": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[pow-pow-dtypes3]"
+        ],
+        "sub": [
+            "test_binary_pointwise_perf.py::test_general_binary_pointwise_perf[sub-sub-dtypes4]"
+        ],
+        "where": [
+            "test_generic_pointwise_perf.py::test_generic_pointwise_benchmark[where-where-where_input_fn-dtypes2]"
+        ],
+        "addmm": [
+            "test_blas_perf.py::test_blas_benchmark[addmm-addmm-addmm_input_fn]"
+        ],
+        "bmm": [
+            "test_blas_perf.py::test_blas_benchmark[bmm-bmm-bmm_input_fn]"
+        ],
+        "mm": [
+            "test_blas_perf.py::test_blas_benchmark[mm-mm-mm_input_fn]"
+        ],
+        "mv": [
+            "test_blas_perf.py::test_blas_benchmark[mv-mv-mv_input_fn]"
+        ],
+        "outer": [
+            "test_blas_perf.py::test_outer_benchmark"
+        ],
+        "group_norm": [
+            "test_norm_perf.py::test_group_and_layer_and_instance_norm_benchmark[group_norm-group_norm-groupnorm_input_fn]"
+        ],
+        "instance_norm": [
+            "test_norm_perf.py::test_group_and_layer_and_instance_norm_benchmark[instance_norm-instance_norm-instancenorm_input_fn]"
+        ],
+        "layer_norm": [
+            "test_norm_perf.py::test_group_and_layer_and_instance_norm_benchmark[layer_norm-layer_norm-layernorm_input_fn]"
+        ],
+        "vector_norm": [
+            "test_norm_perf.py::test_weight_vector_norm_benchmark[vector_norm-linalg_vector_norm-unary_input_fn]"
+        ],
+        "weight_norm_interface": [
+            "test_norm_perf.py::test_weight_vector_norm_benchmark[weight_norm_interface-_weight_norm_interface-weight_norm_interface_input_fn]"
+        ],
+        "weight_norm": [
+            "test_norm_perf.py::test_weight_vector_norm_benchmark[weight_norm-_weight_norm-weight_norm_input_fn]"
+        ],
+        "all": [
+            "test_reduction_perf.py::test_general_reduction_perf[all-all-dtypes0]"
+        ],
+        "all_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[all-all-dtypes0]"
+        ],
+        "amax": [
+            "test_reduction_perf.py::test_general_reduction_perf[amax-amax-dtypes1]"
+        ],
+        "any": [
+            "test_reduction_perf.py::test_general_reduction_perf[any-any-dtypes2]"
+        ],
+        "any_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[any-any-dtypes2]"
+        ],
+        "argmax": [
+            "test_reduction_perf.py::test_general_reduction_perf[argmax-argmax-dtypes3]"
+        ],
+        "count_nonzero": [
+            "test_reduction_perf.py::test_perf_count_nonzero"
+        ],
+        "cross_entropy_loss": [
+            "test_reduction_perf.py::test_generic_reduction_benchmark[CrossEntropyLoss-cross_entropy-cross_entropy_loss_input_fn-dtypes2]"
+        ],
+        "cummin": [
+            "test_reduction_perf.py::test_generic_reduction_benchmark[cummin-cummin-cumsum_input_fn-dtypes4]"
+        ],
+        "cumsum": [
+            "test_reduction_perf.py::test_generic_reduction_benchmark[cumsum-cumsum-cumsum_input_fn-dtypes3]"
+        ],
+        "gather": [
+            "test_select_and_slice_perf.py::test_perf_gather"
+        ],
+        "index_add": [
+            "test_select_and_slice_perf.py::test_index_add_perf"
+        ],
+        "index_select": [
+            "test_select_and_slice_perf.py::test_generic_reduction_benchmark[index_select-index_select-index_select_input_fn-index_select_gbps-dtypes0]"
+        ],
+        "log_softmax": [
+            "test_reduction_perf.py::test_generic_reduction_benchmark[log_softmax-log_softmax-unary_input_fn-dtypes0]"
+        ],
+        "masked_select": [
+            "test_select_and_slice_perf.py::test_generic_reduction_benchmark[masked_select-masked_select-masked_select_input_fn-mask_select_gbps-dtypes1]"
+        ],
+        "max": [
+            "test_reduction_perf.py::test_general_reduction_perf[max-max-dtypes4]"
+        ],
+        "max_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[max-max-dtypes4]"
+        ],
+        "mean": [
+            "test_reduction_perf.py::test_general_reduction_perf[mean-mean-dtypes5]"
+        ],
+        "mean_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[mean-mean-dtypes5]"
+        ],
+        "min": [
+            "test_reduction_perf.py::test_general_reduction_perf[min-min-dtypes6]"
+        ],
+        "min_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[min-min-dtypes6]"
+        ],
+        "nonzero": [
+            "test_reduction_perf.py::test_generic_reduction_benchmark[nonzero-nonzero-unary_input_fn-dtypes1]"
+        ],
+        "prod": [
+            "test_reduction_perf.py::test_general_reduction_perf[prod-prod-dtypes7]"
+        ],
+        "prod_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[prod-prod-dtypes7]"
+        ],
+        "scatter": [
+            "test_select_and_slice_perf.py::test_perf_scatter"
+        ],
+        "select_scatter": [
+            "test_select_and_slice_perf.py::test_select_scatter_perf"
+        ],
+        "slice_scatter": [
+            "test_select_and_slice_perf.py::test_slice_scatter_perf"
+        ],
+        "softmax": [
+            "test_reduction_perf.py::test_general_reduction_perf[softmax-softmax-dtypes8]"
+        ],
+        "sum": [
+            "test_reduction_perf.py::test_general_reduction_perf[sum-sum-dtypes9]"
+        ],
+        "sum_dim": [
+            "test_reduction_perf.py::test_general_reduction_perf[sum-sum-dtypes9]"
+        ],
+        "var_mean": [
+            "test_reduction_perf.py::test_general_reduction_perf[var_mean-var_mean-dtypes10]"
+        ],
+        "arange": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[arange-arange-arange_input_fn]"
+        ],
+        "fill_scalar": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[fill-fill-fill_input_fn]"
+        ],
+        "full": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[full-full-full_input_fn]"
+        ],
+        "full_like": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[full_like-full_like-full_like_input_fn]"
+        ],
+        "masked_fill": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[masked_fill-masked_fill-masked_fill_input_fn]"
+        ],
+        "ones": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[ones-ones-generic_constructor_input_fn]"
+        ],
+        "ones_like": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[ones_like-ones_like-unary_input_fn]"
+        ],
+        "rand": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[rand-rand-generic_constructor_input_fn]"
+        ],
+        "rand_like": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[rand_like-rand_like-unary_input_fn]"
+        ],
+        "randn": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[randn-randn-generic_constructor_input_fn]"
+        ],
+        "randn_like": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[randn_like-randn_like-unary_input_fn]"
+        ],
+        "randperm": [
+            "test_tensor_constructor_perf.py::test_perf_randperm"
+        ],
+        "zeros": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[zeros-zeros-generic_constructor_input_fn]"
+        ],
+        "zeros_like": [
+            "test_tensor_constructor_perf.py::test_tensor_constructor_benchmark[zeros_like-zeros_like-unary_input_fn]"
+        ],
+        "pad": [
+            "test_special_perf.py::test_perf_pad"
+        ],
+        "constant_pad_nd": [
+            "test_special_perf.py::test_perf_pad"
+        ],
+        "exponential": [
+            "test_distribution_perf.py::test_distribution_benchmark[exponential_-exponential_-unary_input_fn]"
+        ],
+        "normal_tensor_tensor": [
+            "test_distribution_perf.py::test_distribution_benchmark[normal-Normal-normal_input_fn]"
+        ],
+        "uniform": [
+            "test_distribution_perf.py::test_distribution_benchmark[uniform_-uniform_-unary_input_fn]"
+        ],
+        "upsample_bicubic2d_aa": [
+            "test_special_perf.py::test_perf_upsample_bicubic2d_aa"
+        ],
+        "unique2": [
+            "test_special_perf.py::test_perf_unique"
+        ],
+        "cat": [
+            "test_tensor_concat_perf.py::test_concat_benchmark[cat-cat-stack_cat_input_fn-dtype0]"
+        ],
+        "diag": [
+            "test_special_perf.py::test_perf_diag"
+        ],
+        "diag_embed": [
+            "test_special_perf.py::test_perf_diag_embed"
+        ],
+        "diagonal_backward": [
+            "test_special_perf.py::test_perf_diagonal_backward"
+        ],
+        "embedding": [
+            "test_special_perf.py::test_perf_embedding"
+        ],
+        "hstack": [
+            "test_tensor_concat_perf.py::test_concat_benchmark[hstack-hstack-hstack_vstack_input_fn-dtype2]"
+        ],
+        "isin": [
+            "test_special_perf.py::test_isin_perf"
+        ],
+        "multinomial": [
+            "test_special_perf.py::test_multinomial_with_replacement"
+        ],
+        "repeat_interleave_self_int": [
+            "test_tensor_concat_perf.py::test_tensor_repeat_benchmark[repeat_interleave_self_int-repeat_interleave-repeat_interleave_self_int_input_fn-dtypes2]"
+        ],
+        "repeat_interleave_tensor": [
+            "test_tensor_concat_perf.py::test_tensor_repeat_benchmark[repeat_interleave_tensor-repeat_interleave-repeat_interleave_tensor_input_fn-dtypes4]"
+        ],
+        "repeat_interleave_self_tensor": [
+            "test_tensor_concat_perf.py::test_tensor_repeat_benchmark[repeat_interleave_self_tensor-repeat_interleave-repeat_interleave_self_tensor_input_fn-dtypes3]"
+        ],
+        "resolve_conj": [
+            "test_special_perf.py::test_special_operations_benchmark[resolve_conj-resolve_conj-dtypes2-resolve_conj_input_fn]"
+        ],
+        "resolve_neg": [
+            "test_special_perf.py::test_special_operations_benchmark[resolve_neg-resolve_neg-dtypes1-resolve_neg_input_fn]"
+        ],
+        "sort": [
+            "test_special_perf.py::test_perf_sort"
+        ],
+        "stack": [
+            "test_tensor_concat_perf.py::test_concat_benchmark[stack-stack-stack_cat_input_fn-dtype1]"
+        ],
+        "topk": [
+            "test_special_perf.py::test_special_operations_benchmark[topk-topk-dtypes0-topk_input_fn]"
+        ],
+        "upsample_nearest2d": [
+            "test_special_perf.py::test_perf_upsample_nearest2d"
+        ],
+        "vstack": [
+            "test_tensor_concat_perf.py::test_concat_benchmark[vstack-vstack-hstack_vstack_input_fn-dtype3]"
+        ]
+    }
+}
