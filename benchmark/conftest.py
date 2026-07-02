@@ -21,6 +21,7 @@ from .attri_util import (
 )
 
 device = flag_gems.device
+vendor_name = flag_gems.vendor_name
 
 
 class BenchConfig:
@@ -29,6 +30,11 @@ class BenchConfig:
         self.bench_level = BenchLevel.COMPREHENSIVE
         self.warm_up = DEFAULT_WARMUP_COUNT
         self.repetition = DEFAULT_ITER_COUNT
+        if (
+            vendor_name == "kunlunxin"
+        ):  # Speed Up Benchmark Test, Big Shape Will Cause Timeout
+            self.warm_up = 1
+            self.repetition = 1
         self.record_log = False
         self.user_desired_dtypes = None
         self.user_desired_metrics = None
@@ -41,7 +47,9 @@ Config = BenchConfig()
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--mode",
+        (
+            "--mode" if vendor_name != "kunlunxin" else "--fg_mode"
+        ),  # TODO: fix pytest-* common --mode args
         action="store",
         default=device,
         required=False,
@@ -121,9 +129,8 @@ def pytest_addoption(parser):
         help="Benchmark info recorded in log files or not",
     )
 
-
 def pytest_configure(config):
-    global Config
+    global Config  # noqa: F824
     mode_value = config.getoption("--mode")
     Config.cpu_mode = mode_value == "cpu"
 

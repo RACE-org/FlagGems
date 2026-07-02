@@ -6,7 +6,9 @@ from typing import Any, Callable, List, Mapping, Tuple
 import torch
 
 from flag_gems.utils.code_cache import code_cache_dir
-from flag_gems.utils.code_utils import IndentedBuffer, NameSpace
+from flag_gems.utils.code_utils import IndentedBuffer, write_atomic
+
+logger = logging.getLogger(__name__)
 
 
 # --------------------------- padding wrapper genration -----------------------------------
@@ -222,42 +224,29 @@ def generate_pad_kernel(
 
     # signature
     code.writeline(f"def {kernel_name}(")
-    function_ns = NameSpace()
     with code.indent():
         code.writeline("in0_ptr: tl.tensor, # of tl.pointer_type")
-        function_ns.create_name("in0_ptr")
 
         code.writeline("out0_ptr: tl.tensor, # of tl.pointer_type")
-        function_ns.create_name("out0_ptr")
 
         if rank > 0:
             # shape for inputs
-            for j in range(rank):
-                function_ns.create_name(f"x_shape{j}")
             shape_args = ", ".join(f"x_shape{j}: int" for j in range(rank))
             code.writeline(f"{shape_args}, # shape for x")
 
             # shape for inputs
-            for j in range(rank):
-                function_ns.create_name(f"in_strides{j}")
             stride_args = ", ".join(f"in_strides{j}: int" for j in range(rank))
             code.writeline(f"{stride_args}, # stride for x")
 
             # shape for inputs
-            for j in range(rank):
-                function_ns.create_name(f"out_strides{j}")
             stride_args = ", ".join(f"out_strides{j}: int" for j in range(rank))
             code.writeline(f"{stride_args}, # stride for out")
 
             # shape for inputs
-            for j in range(rank):
-                function_ns.create_name(f"valid_dim{j}_start")
             stride_args = ", ".join(f"valid_dim{j}_start: int" for j in range(rank))
             code.writeline(f"{stride_args}, # valid dim start")
 
             # shape for inputs
-            for j in range(rank):
-                function_ns.create_name(f"valid_dim{j}_end")
             stride_args = ", ".join(f"valid_dim{j}_end: int" for j in range(rank))
             code.writeline(f"{stride_args}, # valid dim end")
 
@@ -422,15 +411,14 @@ class PadFunction:
                 code,
             )
 
-            file_name = f"constant_pad_rank_{key}_pid_{self.pid}.py"
-
-            with open(code_cache_dir() / file_name, "wt", encoding="utf-8") as f:
-                f.write(code.getvalue())
+            file_name = f"constant_pad_rank_{key}.py"
+            file_path = code_cache_dir() / file_name
+            write_atomic(file_path, code.getvalue())
 
             # load
             spec = importlib.util.spec_from_file_location(
-                f"_gen_module_rank_{key}_pid_{self.pid}",
-                f.name,
+                f"_gen_module_rank_{key}",
+                file_path,
             )
 
             m = importlib.util.module_from_spec(spec)
@@ -451,7 +439,7 @@ _pad_func = PadFunction()
 
 
 def pad(self, pad, mode="constant", value=None):
-    logging.debug("GEMS CONSTANT PAD ND")
+    logger.debug("GEMS CONSTANT PAD ND")
 
     ndim = self.ndim
 

@@ -1,17 +1,7 @@
 import os
 from dataclasses import dataclass
-from enum import Enum
 
 import yaml
-
-
-class Autograd(Enum):
-    enable = True
-    disable = False
-
-    @classmethod
-    def get_optional_value(cls):
-        return [member.name for member in cls]
 
 
 # Metadata template,  Each vendor needs to specialize instances of this template
@@ -20,6 +10,8 @@ class VendorInfoBase:
     vendor_name: str
     device_name: str
     device_query_cmd: str
+    dispatch_key: str = None
+    triton_extra_name: str = None
 
 
 def get_tune_config(vendor_name, file_mode="r"):
