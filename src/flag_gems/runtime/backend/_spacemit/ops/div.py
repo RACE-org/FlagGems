@@ -210,10 +210,37 @@ def true_divide_(A, B):
 def floor_divide(A, B):
     logger.debug("GEMS_SPACEMIT FLOOR_DIVIDE")
     result = true_divide(A, B)
-    return result.floor_().to(A.dtype if isinstance(A, torch.Tensor) else torch.int64)
+    if isinstance(A, torch.Tensor):
+        out_dtype = A.dtype
+    elif isinstance(B, torch.Tensor):
+        out_dtype = B.dtype
+    else:
+        out_dtype = torch.float32 if isinstance(A, float) or isinstance(B, float) else torch.int64
+    return result.floor_().to(out_dtype)
 
 
 def trunc_divide(A, B):
     logger.debug("GEMS_SPACEMIT TRUNC_DIVIDE")
     result = true_divide(A, B)
-    return result.trunc_().to(A.dtype if isinstance(A, torch.Tensor) else torch.int64)
+    if isinstance(A, torch.Tensor):
+        out_dtype = A.dtype
+    elif isinstance(B, torch.Tensor):
+        out_dtype = B.dtype
+    else:
+        out_dtype = torch.float32 if isinstance(A, float) or isinstance(B, float) else torch.int64
+    return result.trunc_().to(out_dtype)
+
+
+def div_mode(A, B, rounding_mode=None):
+    logger.debug("GEMS_SPACEMIT DIV_MODE")
+    if rounding_mode is None:
+        return true_divide(A, B)
+    if rounding_mode == "trunc":
+        return trunc_divide(A, B)
+    if rounding_mode == "floor":
+        return floor_divide(A, B)
+    msg = (
+        "div expected rounding_mode to be one of None, 'trunc', or 'floor' "
+        f"but found {rounding_mode}."
+    )
+    raise ValueError(msg)

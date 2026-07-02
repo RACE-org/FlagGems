@@ -11,9 +11,15 @@ from flag_gems.runtime import torch_device_fn
 from flag_gems.utils import dim_compress, libentry
 from flag_gems.utils import triton_lang_extension as tle
 
+import os
+
 try:
     from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
 except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
     alloc_mbarrier = None
     release_mbarrier = None
 

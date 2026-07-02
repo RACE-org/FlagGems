@@ -88,6 +88,7 @@ fn = torch.{device_name}
             "get_device_properties",
             getattr(backends_module, "_DeviceWrapper").get_device_properties,
         )
+        setattr(torch_device_object, "empty_cache", getattr(backends_module, "empty_cache"))
     return torch_device_object
 
 

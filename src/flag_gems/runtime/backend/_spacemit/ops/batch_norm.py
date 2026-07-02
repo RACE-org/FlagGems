@@ -79,8 +79,8 @@ def batch_norm_forward_kernel(
 
         # traning mode default track_running_stat
         if is_train:
-            sum_ = tl.zeros((), dtype=tl.float32)
-            sumsq = tl.zeros((), dtype=tl.float32)
+            sum_acc = tl.zeros([BLOCK_M, BLOCK_N], dtype=tl.float32)
+            sumsq_acc = tl.zeros([BLOCK_M, BLOCK_N], dtype=tl.float32)
             cnt = tl.zeros((), dtype=tl.int32)
 
             m_num_steps = tl.cdiv(batch_dim, BLOCK_M)
@@ -104,9 +104,12 @@ def batch_norm_forward_kernel(
                     mask = batch_mask[:, None] & spatial_mask[None, :]
                     curr_input = tl.load(curr_input_pointer, mask=mask).to(tl.float32)
                     curr_input = tl.where(mask, curr_input, 0.0)
-                    sum_ += tl.sum(curr_input)
-                    sumsq += tl.sum(curr_input * curr_input)
+                    sum_acc += curr_input
+                    sumsq_acc += curr_input * curr_input
                     cnt += tl.sum(mask.to(tl.int32))
+
+            sum_ = tl.sum(sum_acc)
+            sumsq = tl.sum(sumsq_acc)
 
             total = tl.maximum(cnt, 1)
             final_mean = sum_ / total

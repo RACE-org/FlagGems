@@ -289,7 +289,7 @@ def update_running_stats_kernel(
     for b in range(0, B, BLOCK_BATCH_SIZE):
         bid = b * BLOCK_BATCH_SIZE + tl.arange(0, BLOCK_BATCH_SIZE)[:, None]
         row_mask = bid < B
-        mask = row_mask and col_mask[None, :]
+        mask = row_mask & col_mask[None, :]
         mean = tl.load(mean_ptr + bid * C + cid[None, :], mask=mask, other=0.0).to(
             tl.float32
         )
@@ -352,7 +352,7 @@ def instance_norm_backward_kernel(
     for off in range(0, N, BLOCK_COL_SIZE):
         cols = off + tl.arange(0, BLOCK_COL_SIZE)
         col_mask = cols[None, :] < N
-        mask = row_mask and col_mask
+        mask = row_mask & col_mask
         dy = tl.load(dY + cols[None, :], mask).to(tl.float32)
         x = tl.load(X + cols[None, :], mask).to(tl.float32)
         x = tl.where(mask, x - mean, 0.0)
@@ -367,7 +367,7 @@ def instance_norm_backward_kernel(
     for off in range(0, N, BLOCK_COL_SIZE):
         cols = off + tl.arange(0, BLOCK_COL_SIZE)
         col_mask = cols[None, :] < N
-        mask = row_mask and col_mask
+        mask = row_mask & col_mask
         dy = tl.load(dY + cols[None, :], mask).to(tl.float32)
         x = tl.load(X + cols[None, :], mask).to(tl.float32)
         x = tl.where(mask, x - mean, 0.0)
@@ -414,7 +414,7 @@ def weight_bias_backward_kernel(
         for off in range(0, N, BLOCK_COL_SIZE):
             cols = off + tl.arange(0, BLOCK_COL_SIZE)
             col_mask = cols[None, :] < N
-            mask = row_mask and col_mask
+            mask = row_mask & col_mask
             dy = tl.load(dY + mid * N + cols[None, :], mask).to(tl.float32)
             x = tl.load(X + mid * N + cols[None, :], mask).to(tl.float32)
             x = tl.where(mask, x - mean, 0.0)

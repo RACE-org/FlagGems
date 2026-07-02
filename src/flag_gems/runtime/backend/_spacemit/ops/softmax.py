@@ -6,7 +6,6 @@ import triton.language as tl
 
 from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
-from flag_gems.ops.softmax import softmax_backward as common_softmax_backward
 from flag_gems.utils import libentry
 from flag_gems.utils import tl_extra_shim
 
@@ -145,8 +144,3 @@ def softmax(self, dim, half_to_float=False):
     out_2d = torch.empty_like(inp_2d, dtype=dtype)
     _spacemit_softmax_lastdim(inp_2d, out_2d)
     return out_2d.view_as(inp)
-
-
-def softmax_backward(grad_output, output, dim, input_dtype):
-    logger.debug("GEMS_SPACEMIT SOFTMAX_VJP")
-    return common_softmax_backward(grad_output, output, dim, input_dtype)

@@ -845,8 +845,7 @@ SHAPE_CONV1D = [
 ]
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.skip("conv1d introduces failures, disable it temporarily")
+# @pytest.mark.skip("conv1d introduces failures, disable it temporarily")
 @pytest.mark.conv1d
 @pytest.mark.parametrize("shape, kernel", SHAPE_CONV1D)
 @pytest.mark.parametrize("stride", [2])
@@ -886,7 +885,6 @@ SHAPE_CONV2D = [
 ]
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.skipif(flag_gems.device == "musa", reason="RuntimeError")
 @pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.conv2d
@@ -1071,7 +1069,6 @@ INDEX_PUT_SHAPE_ACC_TRUE = (
 )
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.index_put
 @pytest.mark.parametrize(
     "input_shape, indices_shape, values_shape", INDEX_PUT_SHAPE_ACC_TRUE

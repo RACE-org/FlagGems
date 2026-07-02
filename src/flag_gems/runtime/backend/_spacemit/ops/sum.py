@@ -8,14 +8,19 @@ import triton.language as tl
 import triton.language.extra.smt as smt
 
 from flag_gems import runtime
-from flag_gems.ops.zeros import zero_
 from flag_gems.runtime import torch_device_fn
 from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
 
+import os
+
 try:
     from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
 except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
     alloc_mbarrier = None
     release_mbarrier = None
 
@@ -34,9 +39,7 @@ def sum_kernel_1(
     BLOCK_SIZE: tl.constexpr,
     BLOCK_INNER: tl.constexpr,
 ):
-    if tl.constexpr(inp.dtype.element_ty == tl.float16) or tl.constexpr(
-        inp.dtype.element_ty == tl.bfloat16
-    ):
+    if tl.constexpr(inp.dtype.element_ty == tl.bfloat16):
         cdtype = tl.float32
     else:
         cdtype = inp.dtype.element_ty
@@ -63,9 +66,7 @@ def sum_kernel_1(
 @libentry()
 @triton.jit
 def sum_kernel_2(mid, out, MID_SIZE, BLOCK_MID: tl.constexpr):
-    if tl.constexpr(mid.dtype.element_ty == tl.float16) or tl.constexpr(
-        mid.dtype.element_ty == tl.bfloat16
-    ):
+    if tl.constexpr(mid.dtype.element_ty == tl.bfloat16):
         cdtype = tl.float32
     else:
         cdtype = mid.dtype.element_ty
@@ -90,9 +91,7 @@ def sum_kernel_barrier(
     BLOCK_INNER: tl.constexpr,
     BLOCK_MID: tl.constexpr,
 ):
-    if tl.constexpr(inp.dtype.element_ty == tl.float16) or tl.constexpr(
-        inp.dtype.element_ty == tl.bfloat16
-    ):
+    if tl.constexpr(inp.dtype.element_ty == tl.bfloat16):
         cdtype = tl.float32
     else:
         cdtype = inp.dtype.element_ty
@@ -429,7 +428,7 @@ def sum_dim(inp, dim=None, keepdim=False, *, dtype=None):
                     index_to_remove = d % inp.ndim
                     out_shape.pop(index_to_remove)
         out = torch.empty(out_shape, dtype=dtype, device=inp.device)
-        zero_(out)
+        out.zero_()
         return out
     return sum_dim_comm(inp, dim, keepdim, dtype=dtype)
 

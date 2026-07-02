@@ -214,7 +214,7 @@ def local_quick_unique_flat_impl(
     # tile_sum
     tile_sum_mask = (r == tile_size - 1) & (global_pid < global_ctas_num)
     tile_sum = tl.where(tile_sum_mask & (global_pid == 0), cumsum + 1, cumsum)
-    tl.store(tile_sum_ptr + global_pid + tl.zeros_like(r), tile_sum, mask=tile_sum_mask)
+    tl.store(tile_sum_ptr + global_pid, tile_sum, mask=tile_sum_mask)
 
 
 @libentry()

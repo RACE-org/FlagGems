@@ -6,10 +6,7 @@ import triton.language as tl
 
 from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
-from flag_gems.utils import libentry, libtuner, tl_extra_shim
-
-log = tl_extra_shim.log
-exp = tl_extra_shim.exp
+from flag_gems.utils import libentry, libtuner
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +59,8 @@ def log_sigmoid_kernel(
         x = x.to(tl.float32)
         min_val = tl.minimum(x, 0.0)
         abs_x = tl.abs(x)
-        out = min_val - log(1.0 + exp(-abs_x))
+        # Use native tl.log and tl.exp to avoid isfinite issues
+        out = min_val - tl.log(1.0 + tl.exp(-abs_x))
         tl.store(out_blk, out.to(x_dtype), boundary_check=(0,))
 
 
@@ -70,7 +68,8 @@ def log_sigmoid(input):
     logger.debug("GEMS_SPACEMIT LOG_SIGMOID")
     input = input.contiguous()
     out = torch.empty_like(input)
+    buffer = torch.empty_like(input)
     n = input.numel()
     with torch_device_fn.device(input.device):
         log_sigmoid_kernel[(NUM_CTAS,)](input, out, n)
-    return out
+    return out, buffer

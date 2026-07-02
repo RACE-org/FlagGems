@@ -13,9 +13,15 @@ from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
 from flag_gems.utils.limits import get_dtype_min
 
+import os
+
 try:
     from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
 except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
     alloc_mbarrier = None
     release_mbarrier = None
 

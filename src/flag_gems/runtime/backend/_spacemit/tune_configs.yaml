@@ -60,14 +60,14 @@ bmm:
     num_stages: 2
 argmax:
 - META:
-    BLOCK_M: 8
-    BLOCK_N: 256
+    BLOCK_M: 32
+    BLOCK_N: 32
 - META:
     BLOCK_M: 16
-    BLOCK_N: 256
+    BLOCK_N: 32
 - META:
-    BLOCK_M: 32
-    BLOCK_N: 256
+    BLOCK_M: 64
+    BLOCK_N: 64
 argmin:
 - META:
     BLOCK_M: 8
@@ -101,11 +101,19 @@ mm_spacemit:
     MICRO_M: 8
     MICRO_K: 32
     MICRO_N: 32
+mm_spacemit_v1:
+  - META:
+      BLOCK_M: 64
+      BLOCK_N: 64
+      BLOCK_K: 64
+    num_stages: 5
+    num_warps: 4
 mm:
   - META:
       BLOCK_M: 64
       BLOCK_N: 64
       BLOCK_K: 64
+      SPLIT_K: 1
     num_stages: 5
     num_warps: 4
 softmax_non_inner:
@@ -316,11 +324,34 @@ masked_select:
   - 1024
   - 2048
   - 4096
+mean_spacemit_v1:
+- gen: true
+  param_map:
+    META:
+      BLOCK_M: block_m
+      BLOCK_N: block_n
+  block_m:
+  - 1
+  - 2
+  - 4
+  - 8
+  block_n:
+  - 256
+  - 512
+  - 1024
+  - 2048
+
 mean:
 - gen: true
   param_map:
     META:
+      BLOCK_M: block_m
       BLOCK_N: block_n
+  block_m:
+  - 1
+  - 2
+  - 4
+  - 8
   block_n:
   - 256
   - 512
@@ -397,9 +428,17 @@ upsample_bicubic2d_aa:
   block_y: [2, 1]
 
 mv:
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 32
+- gen: true
+  param_map:
+    META:
+      BLOCK_M: block_m
+      BLOCK_N: block_n
+  block_m:
+  - 16
+  - 32
+  block_n:
+  - 16
+  - 32
 nonzero:
 - gen: true
   param_map:

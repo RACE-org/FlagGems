@@ -11,9 +11,15 @@ from flag_gems.runtime import torch_device_fn
 from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
 
+import os
+
 try:
     from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
 except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
     alloc_mbarrier = None
     release_mbarrier = None
 
@@ -24,7 +30,7 @@ NUM_CTAS = 8
 
 @triton.jit
 def reduce_any(a, b):
-    return a or b
+    return a | b
 
 
 @libentry()
@@ -53,9 +59,9 @@ def any_kernel_dim(
         col_mask = cols < N
         mask = (row_mask) & (col_mask)
         a = tl.load(inp + cols, mask, other=0.0)
-        _any = _any or (a != 0)
+        _any = _any | (a != 0)
     any_val = tl.reduce(_any, axis=1, combine_fn=reduce_any)
-    tl.store(out, any_val[:, None], row_mask)
+    tl.store(out, any_val[:, None].to(tl.int8), row_mask)
 
 
 @libentry()
@@ -71,7 +77,7 @@ def any_kernel_1(
     pid = tle.program_id(0)
     num_ctas = tl.num_programs(0)
     sub_num = tl.cdiv(max(NUM_BLOCKS - pid, 0), num_ctas)
-    _any = False
+    _any = tl.full((), value=0, dtype=tl.int1)
 
     for block_idx in tl.range(0, sub_num):
         task_idx = pid + num_ctas * block_idx
@@ -83,9 +89,9 @@ def any_kernel_1(
             mask = offset < n_elements
             inp_val = tl.load(inp + offset, mask=mask, other=0.0)
             any_val = tl.reduce(inp_val != 0, axis=0, combine_fn=reduce_any)
-            _any = _any or any_val
+            _any = _any | any_val
 
-    tl.store(mid + pid, _any)
+    tl.store(mid + pid, _any.to(tl.int8))
 
 
 @libentry()
@@ -93,9 +99,9 @@ def any_kernel_1(
 def any_kernel_2(mid, out, MID_SIZE, BLOCK_MID: tl.constexpr):
     offset = tl.arange(0, BLOCK_MID)
     mask = offset < MID_SIZE
-    mid_val = tl.load(mid + offset, mask=mask, other=0).to(tl.int1)
+    mid_val = tl.load(mid + offset, mask=mask, other=0) != 0
     any_val = tl.reduce(mid_val, axis=0, combine_fn=reduce_any)
-    tl.store(out, any_val)
+    tl.store(out, any_val.to(tl.int8))
 
 
 @libentry()
@@ -107,6 +113,7 @@ def any_kernel_barrier(
     bar,
     n_elements,
     NUM_BLOCKS,
+    MID_SIZE,
     BLOCK_SIZE: tl.constexpr,
     BLOCK_INNER: tl.constexpr,
     BLOCK_MID: tl.constexpr,
@@ -114,7 +121,7 @@ def any_kernel_barrier(
     pid = tl.program_id(0)
     num_ctas = tl.num_programs(0)
     sub_num = tl.cdiv(max(NUM_BLOCKS - pid, 0), num_ctas)
-    _any = False
+    _any = tl.full((), value=0, dtype=tl.int1)
 
     for block_idx in tl.range(0, sub_num):
         task_idx = pid + num_ctas * block_idx
@@ -126,18 +133,18 @@ def any_kernel_barrier(
             mask = offset < n_elements
             inp_val = tl.load(inp + offset, mask=mask, other=0.0)
             any_val = tl.reduce(inp_val != 0, axis=0, combine_fn=reduce_any)
-            _any = _any or any_val
+            _any = _any | any_val
 
-    tl.store(mid + pid, _any)
+    tl.store(mid + pid, _any.to(tl.int8))
     smt.barrier_arrive(bar)
 
     if pid == tl.num_programs(0) - 1:
         smt.barrier_wait(bar, flag=1)
         offset = tl.arange(0, BLOCK_MID)
-        mask = offset < tl.num_programs(0)
-        mid_val = tl.load(mid + offset, mask=mask, other=0).to(tl.int1)
+        mask = offset < MID_SIZE
+        mid_val = tl.load(mid + offset, mask=mask, other=0) != 0
         any_val = tl.reduce(mid_val, axis=0, combine_fn=reduce_any)
-        tl.store(out, any_val)
+        tl.store(out, any_val.to(tl.int8))
 
 
 def any(inp):
@@ -152,7 +159,7 @@ def any(inp):
     mid_size = min(NUM_CTAS, num_blocks)
     block_mid = triton.next_power_of_2(mid_size)
 
-    mid = torch.empty((mid_size,), dtype=torch.bool, device=inp.device)
+    mid = torch.empty((mid_size,), dtype=torch.int8, device=inp.device)
     out = torch.empty([], dtype=torch.bool, device=inp.device)
 
     with torch_device_fn.device(inp.device):
@@ -160,7 +167,7 @@ def any(inp):
             bar = alloc_mbarrier(mid_size)
             try:
                 any_kernel_barrier[(mid_size,)](
-                    inp, mid, out, bar, n_elements, num_blocks, block_size, block_inner, block_mid
+                    inp, mid, out, bar, n_elements, num_blocks, mid_size, block_size, block_inner, block_mid
                 )
             finally:
                 release_mbarrier(bar)

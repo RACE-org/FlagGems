@@ -61,8 +61,8 @@ def ge_kernel_tt(
             order=(0,),
         )
 
-        a = tl.load(a_blk, boundary_check=(0,)).to(tl.float32)
-        b = tl.load(b_blk, boundary_check=(0,)).to(tl.float32)
+        a = tl.load(a_blk, boundary_check=(0,))
+        b = tl.load(b_blk, boundary_check=(0,))
         out = tl.where(a >= b, 1, 0).to(Out_ptr.type.element_ty)
         tl.store(out_blk, out, boundary_check=(0,))
 
@@ -107,7 +107,7 @@ def ge_kernel_ts(
             order=(0,),
         )
 
-        a = tl.load(a_blk, boundary_check=(0,)).to(tl.float32)
+        a = tl.load(a_blk, boundary_check=(0,))
         out = tl.where(a >= scalar, 1, 0).to(Out_ptr.type.element_ty)
         tl.store(out_blk, out, boundary_check=(0,))
 

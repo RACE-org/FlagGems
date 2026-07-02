@@ -7,7 +7,6 @@ import triton.language as tl
 from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
 from flag_gems.ops.log_softmax import log_softmax as common_log_softmax
-from flag_gems.ops.softmax import softmax_backward as common_softmax_backward
 from flag_gems.utils import libentry
 from flag_gems.utils import tl_extra_shim
 

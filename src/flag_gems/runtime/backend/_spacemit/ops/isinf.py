@@ -54,7 +54,7 @@ def isinf_kernel(
             order=(0,),
         )
 
-        a = tl.load(a_blk, boundary_check=(0,)).to(tl.float32)
+        a = tl.load(a_blk, boundary_check=(0,))
         out = tl.where(_isinf(a), 1, 0).to(Out_ptr.type.element_ty)
         tl.store(out_blk, out, boundary_check=(0,))
 

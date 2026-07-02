@@ -11,9 +11,15 @@ from flag_gems.runtime import torch_device_fn
 from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
 
+import os
+
 try:
     from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
 except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
     alloc_mbarrier = None
     release_mbarrier = None
 
@@ -24,7 +30,12 @@ NUM_CTAS = 8
 
 @triton.jit
 def reduce_all(a, b):
-    return a and b
+    return a | b
+
+
+@triton.jit
+def reduce_count(a, b):
+    return a + b
 
 
 @libentry()
@@ -44,16 +55,17 @@ def all_kernel_dim(
     row_start = tl.program_id(0) * BLOCK_M
     row_end = min(row_start + BLOCK_M, M)
     for mi in range(row_start, row_end, 1):
-        _all = tl.full([1, BLOCK_N], value=1, dtype=tl.int1)
+        has_zero_scalar = tl.zeros([], dtype=tl.int1)
         row_inp = inp + mi * N
         row_out = out + mi
         for off in range(0, N, BLOCK_N):
-            cols = off + tl.arange(0, BLOCK_N)[None, :]
+            cols = off + tl.arange(0, BLOCK_N)
             mask = cols < N
             a = tl.load(row_inp + cols, mask, other=1.0)
-            _all = _all and (a != 0)
-        all_val = tl.reduce(_all, axis=1, combine_fn=reduce_all)
-        tl.store(row_out, all_val)
+            has_zero_block = (a == 0)
+            has_zero_scalar = has_zero_scalar | tl.reduce(has_zero_block, axis=0, combine_fn=reduce_all)
+        all_val = (has_zero_scalar == 0)
+        tl.store(row_out, all_val.to(tl.int8))
 
 
 @libentry()
@@ -69,7 +81,7 @@ def all_kernel_1(
     pid = tl.program_id(0)
     num_ctas = tl.num_programs(0)
     sub_num = tl.cdiv(max(NUM_BLOCKS - pid, 0), num_ctas)
-    _all = True
+    count = tl.full((), value=0, dtype=tl.int32)
 
     for block_idx in tl.range(0, sub_num):
         task_idx = pid + num_ctas * block_idx
@@ -80,21 +92,23 @@ def all_kernel_1(
             offset = ni + tl.arange(0, BLOCK_INNER)
             mask = offset < n_elements
             inp_val = tl.load(inp + offset, mask=mask, other=1.0)
-            all_val = tl.reduce(inp_val != 0, axis=0, combine_fn=reduce_all)
-            _all = _all and all_val
+            nonzero = tl.where(mask & (inp_val != 0), 1, 0)
+            count_val = tl.reduce(nonzero, axis=0, combine_fn=reduce_count)
+            count += count_val
 
-    tl.store(mid + pid, _all)
+    tl.store(mid + pid, count)
 
 
 
 @libentry()
 @triton.jit
-def all_kernel_2(mid, out, MID_SIZE, BLOCK_MID: tl.constexpr):
+def all_kernel_2(mid, out, MID_SIZE, n_elements, BLOCK_MID: tl.constexpr):
     offset = tl.arange(0, BLOCK_MID)
     mask = offset < MID_SIZE
-    mid_val = tl.load(mid + offset, mask=mask, other=1).to(tl.int1)
-    all_val = tl.reduce(mid_val, axis=0, combine_fn=reduce_all)
-    tl.store(out, all_val)
+    mid_val = tl.load(mid + offset, mask=mask, other=0)
+    count = tl.reduce(mid_val, axis=0, combine_fn=reduce_count)
+    all_val = count == n_elements
+    tl.store(out, all_val.to(tl.int8))
 
 
 @libentry()
@@ -106,6 +120,7 @@ def all_kernel_barrier(
     bar,
     n_elements,
     NUM_BLOCKS,
+    MID_SIZE,
     BLOCK_SIZE: tl.constexpr,
     BLOCK_INNER: tl.constexpr,
     BLOCK_MID: tl.constexpr,
@@ -113,7 +128,7 @@ def all_kernel_barrier(
     pid = tl.program_id(0)
     num_ctas = tl.num_programs(0)
     sub_num = tl.cdiv(max(NUM_BLOCKS - pid, 0), num_ctas)
-    _all = True
+    count = tl.full((), value=0, dtype=tl.int32)
 
     for block_idx in tl.range(0, sub_num):
         task_idx = pid + num_ctas * block_idx
@@ -124,19 +139,21 @@ def all_kernel_barrier(
             offset = ni + tl.arange(0, BLOCK_INNER)
             mask = offset < n_elements
             inp_val = tl.load(inp + offset, mask=mask, other=1.0)
-            all_val = tl.reduce(inp_val != 0, axis=0, combine_fn=reduce_all)
-            _all = _all and all_val
+            nonzero = tl.where(mask & (inp_val != 0), 1, 0)
+            count_val = tl.reduce(nonzero, axis=0, combine_fn=reduce_count)
+            count += count_val
 
-    tl.store(mid + pid, _all)
+    tl.store(mid + pid, count)
     smt.barrier_arrive(bar)
 
     if pid == tl.num_programs(0) - 1:
         smt.barrier_wait(bar, flag=1)
         offset = tl.arange(0, BLOCK_MID)
-        mask = offset < tl.num_programs(0)
-        mid_val = tl.load(mid + offset, mask=mask, other=1).to(tl.int1)
-        all_val = tl.reduce(mid_val, axis=0, combine_fn=reduce_all)
-        tl.store(out, all_val)
+        mask = offset < MID_SIZE
+        mid_val = tl.load(mid + offset, mask=mask, other=0)
+        count = tl.reduce(mid_val, axis=0, combine_fn=reduce_count)
+        all_val = count == n_elements
+        tl.store(out, all_val.to(tl.int8))
 
 
 def all(inp):
@@ -151,7 +168,7 @@ def all(inp):
     mid_size = min(NUM_CTAS, num_blocks)
     block_mid = triton.next_power_of_2(mid_size)
 
-    mid = torch.empty((mid_size,), dtype=torch.bool, device=inp.device)
+    mid = torch.empty((mid_size,), dtype=torch.int32, device=inp.device)
     out = torch.empty([], dtype=torch.bool, device=inp.device)
 
     with torch_device_fn.device(inp.device):
@@ -159,13 +176,13 @@ def all(inp):
             bar = alloc_mbarrier(mid_size)
             try:
                 all_kernel_barrier[(mid_size,)](
-                    inp, mid, out, bar, n_elements, num_blocks, block_size, block_inner, block_mid
+                    inp, mid, out, bar, n_elements, num_blocks, mid_size, block_size, block_inner, block_mid
                 )
             finally:
                 release_mbarrier(bar)
         else:
             all_kernel_1[(mid_size,)](inp, mid, n_elements, num_blocks, block_size, block_inner)
-            all_kernel_2[(1, 1)](mid, out, mid_size, block_mid)
+            all_kernel_2[(1, 1)](mid, out, mid_size, n_elements, block_mid)
     return out
 
 

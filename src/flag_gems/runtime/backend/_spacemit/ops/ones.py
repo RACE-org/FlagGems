@@ -43,7 +43,10 @@ def ones_kernel(
             block_shape=(BLOCK_SIZE,),
             order=(0,),
         )
-        value = tl.full((BLOCK_SIZE,), 1.0, dtype=output_ptr.dtype.element_ty)
+        fill_dtype = output_ptr.dtype.element_ty
+        if fill_dtype == tl.int1:
+            fill_dtype = tl.int8
+        value = tl.full((BLOCK_SIZE,), 1, dtype=fill_dtype)
 
         tl.store(
             output_block_ptr,

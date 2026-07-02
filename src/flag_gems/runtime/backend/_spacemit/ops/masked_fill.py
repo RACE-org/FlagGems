@@ -66,7 +66,7 @@ def masked_fill_kernel(
         inp = tl.load(inp_blk, boundary_check=(0,))
         mask = tl.load(mask_blk, boundary_check=(0,))
         mask_bool = mask != 0
-        result = tl.where(mask_bool, value, inp)
+        result = tl.where(mask_bool, tl.cast(value, inp.dtype), inp)
         tl.store(out_blk, result, boundary_check=(0,))
 
 

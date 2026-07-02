@@ -70,7 +70,6 @@ def _spacemit_outer(lhs, rhs):
 class Outer(torch.autograd.Function):
     @staticmethod
     def forward(ctx, inp, weight):
-        print("[DEBUG] ⭐ SPACEMIT OUTER CALLED!")
         logger.debug("GEMS_SPACEMIT OUTER")
         assert inp.ndim == 1 and weight.ndim == 1, "Invalid input"
         out = _spacemit_outer(inp, weight)

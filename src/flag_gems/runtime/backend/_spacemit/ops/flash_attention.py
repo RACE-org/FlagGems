@@ -17,7 +17,6 @@ def _attn_fwd(
     Q,
     K,
     V,
-    M,
     Out,
     acc_buffer,
     sm_scale,
@@ -288,15 +287,8 @@ def _attn_fwd(
                     k_stage_ptr = tl.advance(k_stage_ptr, (BLOCK_N, 0))
 
         acc_2d = smt.view(acc_4d, (0, 0), (BLOCK_M, BLOCK_SIZE_K), (1, 1))
-        m_i = tl.reshape(m_i_2d, (BLOCK_M,))
         l_i = tl.reshape(l_i_2d, (BLOCK_M,))
-
-        m_i = m_i + tl.math.log(l_i)
         accumulator = acc_2d / l_i[:, None]
-
-        mask_m = offs_m < Q_CTX
-        m_ptrs = M + task_hz_idx * Q_CTX + offs_m
-        tl.store(m_ptrs, m_i.to(M.type.element_ty), mask=mask_m)
 
         tl.store(
             O_block_ptr, accumulator.to(Out.type.element_ty), boundary_check=(0, 1)
@@ -337,9 +329,6 @@ class Attention(torch.autograd.Function):
             dtype=torch.float32,
             device=q.device,
         )
-        M = torch.empty(
-            (q.shape[0], q.shape[1], q.shape[2]), dtype=torch.float32, device=q.device
-        )
 
         if is_causal:
             STAGE = 3 if (Q_CTX == KV_CTX) else 4
@@ -353,7 +342,6 @@ class Attention(torch.autograd.Function):
             q,
             k,
             v,
-            M,
             o,
             acc,
             sm_scale,

@@ -2,6 +2,8 @@ import torch
 
 from . import testing  # noqa: F401
 from . import runtime
+from .ops.attention_compat import _scaled_dot_product_efficient_attention
+from .ops.convolution_compat import _convolution, convolution, cudnn_convolution
 from .fused import *  # noqa: F403
 from .ops import *  # noqa: F403
 from .runtime.commom_utils import Autograd
@@ -18,8 +20,7 @@ runtime.replace_customized_ops(globals())
 
 def enable(lib=aten_lib, unused=None, registrar=registrar):
     global current_work_registrar
-    current_work_registrar = registrar(
-        (
+    registered_ops = [
             ("abs", abs, Autograd.disable),
             ("add.Tensor", add, Autograd.disable),
             ("addmm", addmm, Autograd.disable),
@@ -77,6 +78,14 @@ def enable(lib=aten_lib, unused=None, registrar=registrar):
             ("_weight_norm", weight_norm, Autograd.enable),
             ("gt.Tensor", gt, Autograd.disable),
             ("gt.Scalar", gt_scalar, Autograd.disable),
+            ("conv1d", conv1d, Autograd.disable),
+            ("conv1d.padding", conv1d, Autograd.disable),
+            ("conv2d", conv2d, Autograd.disable),
+            ("conv2d.padding", conv2d, Autograd.disable),
+            ("_conv_depthwise2d", _conv_depthwise2d, Autograd.disable),
+            ("convolution", convolution, Autograd.disable),
+            ("_convolution", _convolution, Autograd.disable),
+            ("cudnn_convolution", cudnn_convolution, Autograd.disable),
             ("instance_norm", instance_norm, Autograd.enable),
             ("isfinite", isfinite, Autograd.disable),
             ("isin.Tensor_Tensor", isin, Autograd.disable),
@@ -126,6 +135,8 @@ def enable(lib=aten_lib, unused=None, registrar=registrar):
             ("sigmoid", sigmoid, Autograd.enable),
             ("silu", silu, Autograd.enable),
             ("sin", sin, Autograd.disable),
+            ("softmax", softmax, Autograd.enable),
+            ("_softmax", softmax, Autograd.enable),
             ("softmax.int", softmax, Autograd.enable),
             ("sort", sort, Autograd.disable),
             ("sub.Tensor", sub, Autograd.disable),
@@ -154,6 +165,8 @@ def enable(lib=aten_lib, unused=None, registrar=registrar):
             ("any", any, Autograd.disable),
             ("any.dim", any_dim, Autograd.disable),
             ("any.dims", any_dims, Autograd.disable),
+            ("log_softmax", log_softmax, Autograd.enable),
+            ("_log_softmax", log_softmax, Autograd.enable),
             ("log_softmax.int", log_softmax, Autograd.enable),
             ("outer", outer, Autograd.enable),
             ("cross_entropy_loss", cross_entropy_loss, Autograd.enable),
@@ -199,12 +212,25 @@ def enable(lib=aten_lib, unused=None, registrar=registrar):
             ("diag_embed", diag_embed, Autograd.disable),
             ("diagonal_backward", diagonal_backward, Autograd.disable),
             ("index_add", index_add, Autograd.disable),
+            # ("index_put", index_put, Autograd.disable),
+            # ("index_put_", index_put_, Autograd.disable),
             ("count_nonzero", count_nonzero, Autograd.disable),
             ("logical_or", logical_or, Autograd.disable),
             ("logical_and", logical_and, Autograd.disable),
             ("logical_xor", logical_xor, Autograd.disable),
             ("logical_not", logical_not, Autograd.disable),
-        ),
+            ("_scaled_dot_product_efficient_attention", _scaled_dot_product_efficient_attention, Autograd.enable),
+    ]
+
+    if "batch_norm" in globals():
+        registered_ops.append(("native_batch_norm", batch_norm, Autograd.enable))
+    if "log_sigmoid_forward" in globals():
+        registered_ops.append(("log_sigmoid_forward", log_sigmoid_forward, Autograd.disable))
+    if "scaled_dot_product_attention" in globals():
+        registered_ops.append(("_flash_attention_forward", scaled_dot_product_attention, Autograd.enable))
+
+    current_work_registrar = registrar(
+        tuple(registered_ops),
         user_unused_ops_list=[] if unused is None else unused,
         lib=lib,
     )

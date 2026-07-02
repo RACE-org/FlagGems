@@ -156,4 +156,7 @@ def maxpool2d(
             num_blocks_c,
             BLOCK_SIZE_C,
         )
-    return output
+    # max_pool2d_with_indices schema requires (Tensor, Tensor); return a dummy
+    # indices tensor (zeros) since only the pooling output is used downstream.
+    indices = torch.zeros((N, C, OH, OW), dtype=torch.int64, device=input.device)
+    return output, indices

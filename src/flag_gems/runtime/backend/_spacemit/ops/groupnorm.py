@@ -123,7 +123,7 @@ def group_norm_kernel(
 
 
 @libentry()
-@triton.jit(do_not_specialize=["eps"])
+@triton.jit(do_not_specialize=["group_size", "HW", "num_groups", "num_tasks", "eps"])
 def group_norm_fulltile_kernel(
     X,
     Y,
@@ -170,12 +170,13 @@ def group_norm_fulltile_kernel(
         X_val = tl.load(X_ptr, boundary_check=(0, 1))
         x_dtype = X_val.dtype
         X_val = X_val.to(tl.float32)
-        mean = tl.sum(X_val) / num_elements
-        x = X_val - mean
-
-        var = tl.sum(x * x) / num_elements
+        X_sq = X_val * X_val
+        sum_val = tl.sum(X_val)
+        sumsq_val = tl.sum(X_sq)
+        mean = sum_val / num_elements
+        var = sumsq_val / num_elements - mean * mean
         rstd = rsqrt(var + eps)
-        x_hat = x * rstd
+        x_hat = (X_val - mean) * rstd
 
         if W is None:
             weight = 1

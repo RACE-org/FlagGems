@@ -109,7 +109,7 @@ def bitwise_or_kernel_ts(
 
         a = tl.load(a_blk, boundary_check=(0,))
         out = a | scalar
-        tl.store(out_blk, out, boundary_check=(0,))
+        tl.store(out_blk, out.to(a.dtype), boundary_check=(0,))
 
 
 def bitwise_or_tensor(A, B):

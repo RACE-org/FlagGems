@@ -37,8 +37,8 @@ def layer_norm_common_kernel(
         X_row = X + row * N
         Y_row = Y + row * N
 
-        mean = 0.0
-        var = 0.0
+        mean_acc = tl.zeros([TILE_N], dtype=tl.float32)
+        var_acc = tl.zeros([TILE_N], dtype=tl.float32)
         num_pid_n = tl.cdiv(N, TILE_N)
         x_ptr_desc = tl.make_block_ptr(
             base=X_row,
@@ -49,13 +49,13 @@ def layer_norm_common_kernel(
             order=[0],
         )
         for _ in range(0, num_pid_n):
-            a = tl.load(x_ptr_desc, boundary_check=[0])
-            mean += tl.sum(a)
-            var += tl.sum(a * a)
+            a = tl.load(x_ptr_desc, boundary_check=[0]).to(tl.float32)
+            mean_acc += a
+            var_acc += a * a
             x_ptr_desc = tl.advance(x_ptr_desc, [TILE_N])
 
-        mean = mean / N
-        var = var / N - (mean * mean)
+        mean = tl.sum(mean_acc) / N
+        var = tl.sum(var_acc) / N - (mean * mean)
         rstd = tl.math.rsqrt(var + eps)
         tl.store(Mean + row, mean)
         tl.store(Rstd + row, rstd)

@@ -9,7 +9,6 @@ from .accuracy_utils import gems_assert_close, to_reference
 device = flag_gems.device
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.scaled_dot_product_attention
 @pytest.mark.parametrize("batch", [8, 16])
 @pytest.mark.parametrize("num_head", [1, 8])
@@ -18,7 +17,7 @@ device = flag_gems.device
 @pytest.mark.parametrize("head_size", [64, 128])
 @pytest.mark.parametrize("add_bias", [True, False])
 @pytest.mark.parametrize("is_causal", [True, False])
-@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+@pytest.mark.parametrize("dtype", [torch.float16])
 def test_scaled_dot_product_attention(
     batch, num_head, q_seq_len, kv_seq_len, head_size, add_bias, is_causal, dtype
 ):

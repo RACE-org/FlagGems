@@ -284,7 +284,14 @@ class LibEntry(triton.KernelInterface):
             grid = grid(meta)
         grid = grid + (1, 1)
 
-        kernel[grid[0:3]](*k_args)
+        jit_kwargs = {k: v for k, v in kwargs.items() if k != "grid"}
+        jit_kwargs = {**jit_kwargs, **constexprs}
+        bound_args, _, _ = self.jit_function.device_caches[device][4](
+            *args, **jit_kwargs
+        )
+        launch_args = list(bound_args.values())
+
+        kernel[grid[0:3]](*launch_args)
         return kernel, constexprs
 
 

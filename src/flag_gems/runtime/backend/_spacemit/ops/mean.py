@@ -20,7 +20,7 @@ def mean_kernel_1(
 ):
     # Vectorized load with block_ptr for better spine-triton codegen
     pid = tle.program_id(0)
-    offset_start = pid * BLOCK_SIZE
+    offset_start = (pid * BLOCK_SIZE).to(tl.int32)
 
     inp_ptr = tl.make_block_ptr(
         base=inp,
@@ -78,34 +78,44 @@ def mean(inp, *, dtype=None):
 
 @libentry()
 @triton.autotune(
-    configs=runtime.get_tuned_config("mean"),
+    configs=runtime.get_tuned_config("mean_spacemit_v1"),
     key=["M", "N"],
 )
 @triton.jit
-def mean_dim_kernel(X, Mean, M, N, BLOCK_N: tl.constexpr):
-    row = tl.program_id(0)
-    X = X + row * N
-    Mean = Mean + row
-    _mean = 0.0
+def mean_dim_kernel(X, Mean, M, N, BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr):
+    row_start = tl.program_id(0) * BLOCK_M
+    row_offset = tl.arange(0, BLOCK_M)
+    row_idx = row_start + row_offset
+    row_mask = row_idx < M
 
+    _mean_acc = tl.zeros([BLOCK_M, BLOCK_N], dtype=tl.float32)
     num_pid_n = tl.cdiv(N, BLOCK_N)
 
     x_ptr_desc = tl.make_block_ptr(
         base=X,
-        shape=[N],
-        strides=[1],
-        offsets=[0],
-        block_shape=[BLOCK_N],
-        order=[0],
+        shape=[M, N],
+        strides=[N, 1],
+        offsets=[row_start, 0],
+        block_shape=[BLOCK_M, BLOCK_N],
+        order=[1, 0],
     )
 
     for off_n in range(0, num_pid_n):
-        a = tl.load(x_ptr_desc, boundary_check=[0])
-        _mean += tl.sum(a)
-        x_ptr_desc = tl.advance(x_ptr_desc, [BLOCK_N])
+        a = tl.load(x_ptr_desc, boundary_check=[0, 1]).to(tl.float32)
+        _mean_acc += a
+        x_ptr_desc = tl.advance(x_ptr_desc, [0, BLOCK_N])
 
-    mean = _mean / N
-    tl.store(Mean, mean.to(Mean.dtype.element_ty))
+    mean = tl.sum(_mean_acc, axis=1) / N
+
+    mean_ptr_desc = tl.make_block_ptr(
+        base=Mean,
+        shape=[M],
+        strides=[1],
+        offsets=[row_start],
+        block_shape=[BLOCK_M],
+        order=[0],
+    )
+    tl.store(mean_ptr_desc, mean.to(Mean.dtype.element_ty), boundary_check=[0])
 
 
 def mean_dim(x, dim, keepdim=False, *, dtype=None):
@@ -128,7 +138,7 @@ def mean_dim(x, dim, keepdim=False, *, dtype=None):
         shape[i] = 1
     M = x.numel() // N
     out = torch.empty(shape, dtype=dtype, device=x.device)
-    grid = (M,)
+    grid = lambda META: (triton.cdiv(M, META["BLOCK_M"]),)
     with torch_device_fn.device(x.device):
         mean_dim_kernel[grid](x, out, M, N)
     if not keepdim:

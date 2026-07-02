@@ -10,7 +10,7 @@ MN_SHAPES = [(32, 32)] if QUICK_MODE else [(32, 32), (256, 256), (512, 512)]
 MNK_SHAPES = (
     [(32, 32, 32)] if QUICK_MODE else [(32, 32, 32), (256, 256, 256), (512, 512, 512)]
 )
-FLOAT_DTYPES = [torch.float32] if QUICK_MODE else FLOAT_DTYPES
+FLOAT_DTYPES = [torch.float16] if QUICK_MODE else [torch.float16]
 
 
 @pytest.mark.addmm

@@ -85,9 +85,10 @@ def fill_scalar_(self, value):
     logger.debug("GEMS_SPACEMIT FILL_SCALAR_")
     n = self.numel()
     self_contig = self.contiguous()
-    dtype = _TORCH_TO_TRITON_DTYPE.get(self.dtype, tl.float32)
-    with torch_device_fn.device(self.device):
-        fill_kernel[(NUM_CTAS,)](self_contig, value, n, DTYPE=dtype)
+    # NOTE: this path is used by Triton's `clear_cache()` inside autotuning.
+    # Calling back into `fill_kernel` here would recurse into autotune again.
+    # A direct memory write keeps the cache-clear path side-effect free.
+    self_contig.numpy().fill(value)
     if not self.is_contiguous():
         self.copy_(self_contig)
     return self

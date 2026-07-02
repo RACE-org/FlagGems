@@ -258,6 +258,8 @@ __all__ = [
     "where_scalar_self",
     "where_scalar_other",
     "index_add",
+    # "index_put",
+    # "index_put_",
     "select_scatter",
     "slice_scatter",
     "masked_fill",

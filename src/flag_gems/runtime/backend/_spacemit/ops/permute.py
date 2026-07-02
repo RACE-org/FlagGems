@@ -155,7 +155,7 @@ def _make_tile_shape(shape: tuple[int, ...], block_size: int) -> tuple[int, ...]
 
 	for axis in range(len(shape) - 1, -1, -1):
 		extent = max(1, int(shape[axis]))
-		tile = max(1, min(extent, remaining))
+		tile = max(1, min(triton.next_power_of_2(extent), remaining))
 		tile_shape[axis] = tile
 		remaining = max(1, remaining // tile)
 

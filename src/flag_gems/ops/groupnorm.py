@@ -38,7 +38,7 @@ def group_norm_kernel(
     wb_mask = wb_offset < C
 
     xy_offset = pid * num_elements + group_offset[:, None] * HW + hw_offset[None, :]
-    xy_mask = wb_offset[:, None] < C and hw_offset[None, :] < HW
+    xy_mask = (wb_offset[:, None] < C) & (hw_offset[None, :] < HW)
 
     Mean_ptr = Mean + pid
     Rstd_ptr = Rstd + pid
@@ -96,7 +96,7 @@ def group_norm_backward_kernel(
     wb_mask = wb_offset < C
 
     xy_offset = pid * num_elements + group_offset[:, None] * HW + hw_offset[None, :]
-    xy_mask = wb_offset[:, None] < C and hw_offset[None, :] < HW
+    xy_mask = (wb_offset[:, None] < C) & (hw_offset[None, :] < HW)
 
     Mean_ptr = Mean + pid
     Rstd_ptr = Rstd + pid

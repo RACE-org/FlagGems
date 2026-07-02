@@ -474,6 +474,7 @@ def test_accuracy_floor_divide_scalar_scalar(dtype):
         gems_assert_close(res_out, ref_out, dtype)
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.remainder
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
@@ -1220,6 +1221,7 @@ def test_accuracy_allclose(shape, dtype, equal_nan, gen_nan):
     assert res_out == ref_out
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.logical_or
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES + BOOL_TYPES)

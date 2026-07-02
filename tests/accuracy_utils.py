@@ -5,6 +5,9 @@ import torch
 
 import flag_gems
 
+import random
+import numpy as np
+
 from .conftest import QUICK_MODE, TO_CPU
 
 
@@ -162,3 +165,11 @@ def unsqueeze_tensor(inp, max_ndim):
     for _ in range(inp.ndim, max_ndim):
         inp = inp.unsqueeze(-1)
     return inp
+
+
+def init_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
