@@ -1,11 +1,21 @@
 import importlib
 import itertools
+import random
 
+import numpy as np
 import torch
 
 import flag_gems
 
 from .conftest import QUICK_MODE, TO_CPU
+
+fp64_is_supported = flag_gems.runtime.device.support_fp64
+bf16_is_supported = flag_gems.runtime.device.support_bf16
+int64_is_supported = flag_gems.runtime.device.support_int64
+
+
+def TestForwardOnly():
+    return flag_gems.vendor_name in []
 
 
 def SkipVersion(module_name, skip_pattern):
@@ -112,11 +122,50 @@ UPSAMPLE_SHAPES = [
 ]
 
 
-FLOAT_DTYPES = [torch.float16, torch.float32, torch.bfloat16]
-ALL_FLOAT_DTYPES = FLOAT_DTYPES + [torch.float64]
+KRON_SHAPES = [
+    [(), (2, 3)],
+    [(2, 3), ()],
+    [(0, 3), (2, 3)],
+    [(2, 3), (0,)],
+    [(0,), (0,)],
+    [(), ()],
+    [(1,), (2,)],
+    [(2,), (3,)],
+    [(2, 2), (3, 3)],
+    [(1, 2, 3), (2, 3, 4)],
+    [(1,), (2, 2)],
+    [(1, 2), (3, 4, 5)],
+    [(2,), (3, 4, 5, 6)],
+    [(2, 3, 4), (1,)],
+    [(5, 5), (4, 4)],
+    [(3, 3, 3), (2, 2, 2)],
+    [(4, 4, 4, 4), (2, 2, 2, 2)],
+    [(2, 3, 4), (3, 4, 5)],
+    [(1, 3, 5), (2, 4, 6)],
+    [(2, 4, 6, 8), (1, 3, 5, 7)],
+    [(1, 3), (1, 4)],
+    [(1, 1, 3), (1, 1, 2)],
+    [(2, 1, 4), (3, 1, 5)],
+    [(2, 2, 2, 2, 2), (1, 1, 1, 1, 1)],
+    [(1, 2, 3, 4, 5), (2, 3, 4, 5, 6)],
+    [(1,), (1,)],
+    [(10,), (10,)],
+    [(2, 3), (3, 2)],
+    [(3, 3), (3, 3)],
+    [(1, 1, 1), (2, 2, 2)],
+]
+# Add some test cases with zeor-dimensional tensor and zero-sized tensors.
+PRIMARY_FLOAT_DTYPES = [torch.float16, torch.float32]
+FLOAT_DTYPES = (
+    PRIMARY_FLOAT_DTYPES + [torch.bfloat16]
+    if bf16_is_supported
+    else PRIMARY_FLOAT_DTYPES
+)
+ALL_FLOAT_DTYPES = FLOAT_DTYPES + [torch.float64] if fp64_is_supported else FLOAT_DTYPES
 INT_DTYPES = [torch.int16, torch.int32]
-ALL_INT_DTYPES = INT_DTYPES + [torch.int64]
+ALL_INT_DTYPES = INT_DTYPES + [torch.int64] if int64_is_supported else INT_DTYPES
 BOOL_TYPES = [torch.bool]
+COMPLEX_DTYPES = [torch.complex32, torch.complex64]
 
 SCALARS = [0.001, -0.999, 100.001, -111.999]
 STACK_DIM_LIST = [-2, -1, 0, 1]
@@ -129,7 +178,10 @@ def to_reference(inp, upcast=False):
     if TO_CPU:
         ref_inp = ref_inp.to("cpu")
     if upcast:
-        ref_inp = ref_inp.to(torch.float64)
+        if ref_inp.is_complex():
+            ref_inp = ref_inp.to(torch.complex128)
+        else:
+            ref_inp = ref_inp.to(torch.float64)
     return ref_inp
 
 
@@ -140,16 +192,67 @@ def to_cpu(res, ref):
     return res
 
 
-def gems_assert_close(res, ref, dtype, equal_nan=False, reduce_dim=1):
+def gems_assert_close(res, ref, dtype, equal_nan=False, reduce_dim=1, atol=1e-4):
     res = to_cpu(res, ref)
     flag_gems.testing.assert_close(
-        res, ref, dtype, equal_nan=equal_nan, reduce_dim=reduce_dim
+        res, ref, dtype, equal_nan=equal_nan, reduce_dim=reduce_dim, atol=atol
     )
 
 
 def gems_assert_equal(res, ref, equal_nan=False):
     res = to_cpu(res, ref)
     flag_gems.testing.assert_equal(res, ref, equal_nan=equal_nan)
+
+def gems_assert_cosine_similarity(a, b, dtype, eps=1e-12):
+    a_cpu = a.to("cpu")
+    b_cpu = b.to(dtype)
+    a_cpu = a_cpu.to(dtype=torch.float64)
+    b_cpu = b_cpu.to(dtype=torch.float64)
+
+    a_cpu = a_cpu.flatten()
+    b_cpu = b_cpu.flatten()
+    dim = 0
+
+    is_nan_a = torch.isnan(a_cpu)
+    is_nan_b = torch.isnan(b_cpu)
+    both_nan = is_nan_a & is_nan_b
+
+    is_inf_a = torch.isinf(a_cpu)
+    is_inf_b = torch.isinf(b_cpu)
+    both_inf = is_inf_a & is_inf_b & (torch.sign(a_cpu) == torch.sign(b_cpu))
+
+    invalid_mask = both_nan | both_inf
+    valid_mask = ~invalid_mask
+    a_filtered = a_cpu[valid_mask]
+    b_filtered = b_cpu[valid_mask]
+
+    if len(a_filtered) == 0 and len(b_filtered) == 0:
+        assert True
+    elif len(a_filtered) == 0 and len(b_filtered) != 0:
+        assert False, "The output of inf and nan results is misaligned"
+    elif len(a_filtered) != 0 and len(b_filtered) == 0:
+        assert False, "The output of inf and nan results is misaligned"
+    else:
+        dot_product = (a_filtered * b_filtered).sum(dim=dim)
+        a_norm = a_filtered.norm(p=2, dim=dim)
+        b_norm = b_filtered.norm(p=2, dim=dim)
+
+        cosine_sim = dot_product / (a_norm * b_norm + eps)
+
+        print(f"cosine_sim is: {cosine_sim*100:.4f}%")
+        print(f"dot_product is: {dot_product}")
+        print(f"X_norm*Y_norm is: {a_norm * b_norm + eps}")
+
+        if torch.isnan(cosine_sim):
+            print(f"cosine_sim is: {cosine_sim}")
+            assert torch.isnan(cosine_sim)
+        elif torch.isinf(cosine_sim):
+            print(f"cosine_sim is: {cosine_sim}")
+            assert torch.isinf(cosine_sim)
+        elif cosine_sim < 0.9:
+            print(f"cosine_sim is: {cosine_sim*100:.4f}%")
+            assert False, f"cosine_sim < 90% ({cosine_sim*100:.4f}%)"
+
 
 
 def unsqueeze_tuple(t, max_len):
@@ -162,3 +265,11 @@ def unsqueeze_tensor(inp, max_ndim):
     for _ in range(inp.ndim, max_ndim):
         inp = inp.unsqueeze(-1)
     return inp
+
+
+def init_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
