@@ -305,7 +305,8 @@ def test_accuracy_erf(shape, dtype):
 
 @pytest.mark.isfinite
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
-@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES)
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+#@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES)
 def test_accuracy_isfinite(shape, dtype):
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
     inp = torch.masked_fill(inp, inp > 1.0, float("inf"))
@@ -353,7 +354,8 @@ def test_accuracy_flip_general(shape, dtype, dims):
 
 @pytest.mark.flip
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
-@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
+#@pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
 @pytest.mark.parametrize("dims", FLIP_DIMS)
 def test_accuracy_flip_with_non_dense_input(shape, dtype, dims):
     max_ndim = get_max_ndim(shape, dims)

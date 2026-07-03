@@ -27,7 +27,10 @@ from .conftest import Config
 torch_backend_device = flag_gems.runtime.torch_backend_device
 torch_device_fn = flag_gems.runtime.torch_device_fn
 device = flag_gems.device
-torch_backend_device.matmul.allow_tf32 = False
+if torch_backend_device is None:
+    pass
+else:
+    torch_backend_device.matmul.allow_tf32 = False
 
 
 class Benchmark:
