@@ -230,8 +230,14 @@ class _DeviceWrapper:
 
     @staticmethod
     def get_device_properties(device: Any = None):
-        DeviceProperties = namedtuple("DeviceProperties", ["multi_processor_count"])
-        return DeviceProperties(multi_processor_count=os.cpu_count() or 1)
+        DeviceProperties = namedtuple(
+            "DeviceProperties", ["multi_processor_count", "total_memory"]
+        )
+        return DeviceProperties(
+            multi_processor_count=os.cpu_count() or 1,
+            total_memory=64 * 1024**3,
+        )
+
 
 def empty_cache():
     pass
