@@ -40,7 +40,7 @@ def index_add_kernel(
 
     rows_mask = rows_offsets < M
     index_mask = cols_offsets < N
-    block_mask = rows_mask and index_mask
+    block_mask = rows_mask & index_mask
 
     cur_indices = tl.load(index + cols_offsets, mask=index_mask, other=0)
     inp_off = rows_offsets * inp_len + cur_indices[None, :]
@@ -54,9 +54,7 @@ def index_add_kernel(
 
 def index_add(inp, dim, index, src, alpha=1):
     logging.debug("GEMS INDEX ADD")
-    assert ((0 <= index) * (index < inp.size(dim))).equal(
-        torch.ones(tuple(index.shape), dtype=torch.bool, device="cuda")
-    ), "0 <= index < self.size(dim)"
+    assert ((0 <= index) & (index < inp.size(dim))).all(), "0 <= index < self.size(dim)"
     assert dim >= -inp.ndim and dim < inp.ndim, "Invalid dim"
     assert index.numel() == src.size(
         dim

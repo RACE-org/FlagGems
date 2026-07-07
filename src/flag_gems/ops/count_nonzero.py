@@ -32,7 +32,7 @@ def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
     for start_n in range(0, N, BLOCK_SIZE):
         cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
         offset = pid_x * N + cols_offsets
-        mask = offset < numel and cols_offsets < N
+        mask = offset < numel & cols_offsets < N
         x = tl.load(x_ptr + offset, mask=mask, other=0)
         is_nonzero = (x != 0).to(tl.int64)
         nonzero_count += tl.sum(is_nonzero)
@@ -49,7 +49,7 @@ def count_nonzero_combin_kernel_1(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.const
     for start_n in range(0, N, BLOCK_SIZE):
         cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
         offset = pid_x * N + cols_offsets
-        mask = offset < numel and cols_offsets < N
+        mask = offset < numel & cols_offsets < N
         x = tl.load(x_ptr + offset, mask=mask, other=0)
         nonzero_count += tl.sum(x)
     tl.store(out_ptr + pid_x, nonzero_count)
@@ -64,7 +64,7 @@ def count_nonzero_combin_kernel(
     pid_y = tle.program_id(1)
     cols_offsets = pid_y * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
     offset = pid_x * N + cols_offsets
-    mask = offset < numel and cols_offsets < N
+    mask = offset < numel & cols_offsets < N
     x = tl.load(x_ptr + offset, mask=mask, other=0)
     is_nonzero = (x != 0).to(tl.int64)
     nonzero_count = tl.sum(is_nonzero)

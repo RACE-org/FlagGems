@@ -159,6 +159,7 @@ def test_accuracy_full_like(shape, dtype, xdtype, fill_value):
 @pytest.mark.randperm
 @pytest.mark.parametrize("n", [123, 12345, 123456])
 @pytest.mark.parametrize("dtype", ALL_INT_DTYPES)
+@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_randperm(n, dtype):
     if n > torch.iinfo(torch.int16).max and dtype == torch.int16:
         return

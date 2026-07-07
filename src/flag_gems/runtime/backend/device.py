@@ -32,6 +32,9 @@ class DeviceDetector(object):
             self.device_count = backend.gen_torch_device_object(
                 self.vendor_name
             ).device_count()
+            self.support_fp64 = getattr(self.info, 'support_fp64', False)
+            self.support_bf16 = getattr(self.info, 'support_bf16', False)
+            self.support_int64 = getattr(self.info, 'support_int64', False)
 
     def get_vendor(self, vendor_name=None) -> tuple:
         # Try to get the vendor name from a quick special command like 'torch.mlu'.

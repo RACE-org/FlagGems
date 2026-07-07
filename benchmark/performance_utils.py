@@ -27,7 +27,8 @@ from .conftest import Config
 torch_backend_device = flag_gems.runtime.torch_backend_device
 torch_device_fn = flag_gems.runtime.torch_device_fn
 device = flag_gems.device
-torch_backend_device.matmul.allow_tf32 = False
+if hasattr(torch_backend_device, "matmul"):
+    torch_backend_device.matmul.allow_tf32 = False
 
 
 class Benchmark:
@@ -205,22 +206,29 @@ class Benchmark:
     def set_gems(self, gems_op):
         self.gems_op = gems_op
 
-    def get_latency(self, op, *args, **kwargs):
+    def get_latency(self, op, *args, use_kernel_time=False, **kwargs):
         fn = lambda: op(*args, **kwargs)
         if self.is_backward:
             out = fn()
             dout = torch.randn_like(out)
             fn = lambda: out.backward(dout, retain_graph=True)
         if Config.cpu_mode:
-            for i in range(Config.warm_up):
-                fn()
-            torch_device_fn.synchronize()
-            start = time.time()
-            for i in range(Config.repetition):
-                fn()
-            torch_device_fn.synchronize()
-            end = time.time()
-            latency = (end - start) / Config.repetition * 1000
+            di = triton.runtime.driver.active.get_device_interface()
+            if use_kernel_time and di.use_hooks:
+                di.kernel_times.clear()
+                for i in range(Config.warm_up):
+                    fn()
+                di.kernel_times.clear()
+                for i in range(Config.repetition):
+                    fn()
+                latency = sum(di.kernel_times) / len(di.kernel_times) * 1000 if di.kernel_times else 0
+            else:
+                for i in range(Config.warm_up):
+                    fn()
+                start = time.time()
+                for i in range(Config.repetition):
+                    fn()
+                latency = (time.time() - start) / Config.repetition * 1000
         else:
             latency = triton.testing.do_bench(
                 fn,
@@ -311,12 +319,12 @@ class Benchmark:
                     if "latency" in self.to_bench_metrics:
                         if self.gems_op:
                             metric.latency = self.get_latency(
-                                self.gems_op, *args, **kwargs
+                                self.gems_op, *args, use_kernel_time=True, **kwargs
                             )
                         else:
                             with flag_gems.use_gems():
                                 metric.latency = self.get_latency(
-                                    self.torch_op, *args, **kwargs
+                                    self.torch_op, *args, use_kernel_time=True, **kwargs
                                 )
                     if "speedup" in self.to_bench_metrics:
                         metric.speedup = metric.latency_base / metric.latency
