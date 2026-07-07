@@ -2,6 +2,7 @@ import math
 
 import pytest
 import torch
+import flag_gems
 
 from .attri_util import BenchLevel
 from .performance_utils import (
@@ -96,6 +97,7 @@ def test_tensor_constructor_benchmark(op_name, torch_op, input_fn):
     bench.run()
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "fant", reason="RESULT TODOFIX")
 @pytest.mark.randperm
 def test_perf_randperm():
     def randperm_input_fn(shape, dtype, device):

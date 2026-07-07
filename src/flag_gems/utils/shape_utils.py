@@ -6,6 +6,7 @@ from typing import Iterable, Sequence, Tuple
 import torch
 import triton
 import triton.language as tl
+import flag_gems
 
 from ..utils import triton_lang_extension as tle
 
@@ -195,7 +196,10 @@ def heuristics_for_num_warps(tile_size):
     elif tile_size < 4096:
         return 8
     else:
-        return 16
+        if flag_gems.vendor_name == "fant":
+            return 4
+        else:
+            return 16
 
 
 def dim_compress(inp, dims):

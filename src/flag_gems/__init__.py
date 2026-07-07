@@ -12,6 +12,7 @@ device = runtime.device.name
 aten_lib = torch.library.Library("aten", "IMPL")
 registrar = Register
 current_work_registrar = None
+vendor_name = runtime.device.vendor_name
 
 
 def enable(lib=aten_lib, unused=None, registrar=registrar):
