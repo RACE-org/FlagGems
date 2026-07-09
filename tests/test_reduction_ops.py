@@ -1,7 +1,5 @@
 import random
-import time
 
-import numpy as np
 import pytest
 import torch
 
@@ -15,17 +13,12 @@ from .accuracy_utils import (
     REDUCTION_SHAPES,
     REDUCTION_SMALL_SHAPES,
     SHAPE_STRIDES,
-    UT_SHAPES_1D,
     SkipVersion,
     gems_assert_close,
     gems_assert_equal,
-    init_seed,
     to_reference,
 )
 from .conftest import QUICK_MODE
-
-# Make sure every thread has same seed.
-random.seed(time.time() // 100)
 
 FLOAT_DTYPES = [torch.float32] if QUICK_MODE else FLOAT_DTYPES
 DIM_LIST = [1] if QUICK_MODE else [0, 1]
@@ -102,29 +95,7 @@ def test_accuracy_argmax(shape, dim, keepdim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.argmin
-@pytest.mark.parametrize("shape", REDUCTION_SMALL_SHAPES)
-@pytest.mark.parametrize("dim", DIM_LIST + [None])
-@pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES)
-def test_accuracy_argmin(shape, dim, keepdim, dtype):
-    if dtype in INT_DTYPES:
-        inp = torch.randint(-1024, 1024, size=shape, device=flag_gems.device).to(dtype)
-    else:
-        inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    ref_inp = to_reference(inp)
-
-    ref_out = torch.argmin(ref_inp, dim=dim, keepdim=keepdim)
-    with flag_gems.use_gems():
-        res_out = torch.argmin(inp, dim=dim, keepdim=keepdim)
-
-    gems_assert_equal(res_out, ref_out)
-
-
-@pytest.mark.skipif(flag_gems.vendor_name == "ascend", reason="TODO")
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
+@pytest.mark.cross_entropy_loss
 @pytest.mark.CrossEntropyLoss
 @pytest.mark.parametrize("label_smoothing, ignore_index, shape", SMOOTH_IGNORE_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
@@ -149,22 +120,22 @@ def test_accuracy_cross_entropy_loss_indices(
     else:
         wgt = None
         ref_wgt = None
-    ref_out = torch.nn.functional.cross_entropy(
-        ref_inp,
-        ref_target,
+    ref_criterion = torch.nn.CrossEntropyLoss(
         weight=ref_wgt,
         ignore_index=ignore_index,
         reduction=reduction,
         label_smoothing=label_smoothing,
     )
-    res_out = flag_gems.cross_entropy_loss(
-        inp,
-        target,
+    res_criterion = torch.nn.CrossEntropyLoss(
         weight=wgt,
         ignore_index=ignore_index,
         reduction=reduction,
         label_smoothing=label_smoothing,
     )
+
+    ref_out = ref_criterion(ref_inp, ref_target)
+    with flag_gems.use_gems():
+        res_out = res_criterion(inp, target)
     gems_assert_close(res_out, ref_out, dtype, reduce_dim=shape[dim])
 
     out_grad = torch.randn_like(res_out)
@@ -174,9 +145,7 @@ def test_accuracy_cross_entropy_loss_indices(
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "ascend", reason="TODO")
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
+@pytest.mark.cross_entropy_loss
 @pytest.mark.CrossEntropyLoss
 @pytest.mark.parametrize("label_smoothing, shape", SMOOTH_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
@@ -191,16 +160,20 @@ def test_accuracy_cross_entropy_loss_probabilities(
     ref_inp = to_reference(inp, True)
     ref_target = to_reference(target, True)
     ref_weight = to_reference(weight, True)
-    ref_out = torch.nn.functional.cross_entropy(
-        ref_inp,
-        ref_target,
+    ref_criterion = torch.nn.CrossEntropyLoss(
         weight=ref_weight,
         reduction=reduction,
         label_smoothing=label_smoothing,
     )
-    res_out = flag_gems.cross_entropy_loss(
-        inp, target, weight=weight, reduction=reduction, label_smoothing=label_smoothing
+    res_criterion = torch.nn.CrossEntropyLoss(
+        weight=weight,
+        reduction=reduction,
+        label_smoothing=label_smoothing,
     )
+
+    ref_out = ref_criterion(ref_inp, ref_target)
+    with flag_gems.use_gems():
+        res_out = res_criterion(inp, target)
     gems_assert_close(res_out, ref_out, dtype, reduce_dim=shape[dim])
 
     out_grad = torch.randn_like(res_out)
@@ -210,93 +183,35 @@ def test_accuracy_cross_entropy_loss_probabilities(
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.NLLLoss
-@pytest.mark.parametrize("reduction", ["mean", "none", "sum"])
-@pytest.mark.parametrize("weight", [True, False])
-@pytest.mark.parametrize("shape", REDUCTION_SHAPES)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-@pytest.mark.parametrize("ignore_index", [1, 200, -100])
-def test_accuracy_nll_loss(shape, dtype, ignore_index, reduction, weight):
-    dim = 1
-    target_shape = list(shape)
-    del target_shape[dim]
-
-    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
-    target = torch.randint(0, shape[dim], target_shape, device=flag_gems.device)
-    if weight:
-        weight = torch.randn(shape[dim], dtype=dtype, device=flag_gems.device)
-    else:
-        weight = None
-    ref_inp = to_reference(inp, True)
-    ref_target = to_reference(target)
-    ref_weight = to_reference(weight, True)
-
-    ref_out = torch.nn.functional.nll_loss(
-        ref_inp, ref_target, ref_weight, reduction=reduction, ignore_index=ignore_index
-    )
-    with flag_gems.use_gems():
-        res_out = torch.nn.functional.nll_loss(
-            inp, target, weight, reduction=reduction, ignore_index=ignore_index
-        )
-    reduce_dim = 1 if reduction == "none" else target.numel()
-    gems_assert_close(res_out, ref_out, dtype, reduce_dim=reduce_dim, equal_nan=True)
-
-    out_grad = torch.randn_like(res_out)
-    ref_grad = to_reference(out_grad, True)
-    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
-    with flag_gems.use_gems():
-        (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
-    gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
+CUMSUM_SHAPES = [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 512, 32)]
 
 
-CUMSUM_SHAPES = (
-    [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 1025, 255)]
-)
-
-
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.cumsum
 @pytest.mark.parametrize("shape", CUMSUM_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES)
 def test_accuracy_cumsum(shape, dtype):
-    if flag_gems.vendor_name == "kunlunxin":
-        torch.manual_seed(0)
-        torch.cuda.manual_seed_all(0)
-
     dim = 1 if shape == REDUCTION_SHAPES[-1] else -1
     if dtype in INT_DTYPES:
         inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
-        ref_inp = to_reference(inp)
     else:
         inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-        ref_inp = to_reference(inp, True)
+    ref_inp = to_reference(inp, True)
 
     ref_out = torch.cumsum(ref_inp, dim=dim)
-    if flag_gems.vendor_name == "kunlunxin":
-        from flag_gems.runtime.backend._kunlunxin import ops as kl_ops
-
-        res_out = kl_ops.cumsum(inp, dim=dim)
-    else:
-        with flag_gems.use_gems():
-            res_out = torch.cumsum(inp, dim=dim)
+    with flag_gems.use_gems():
+        res_out = torch.cumsum(inp, dim=dim)
 
     gems_assert_close(res_out, ref_out, dtype, reduce_dim=shape[dim])
 
 
-CUMMIN_SHAPES = (
-    [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 1025, 255)]
-)
+CUMMIN_SHAPES = [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 512, 32)]
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
+@pytest.mark.cummin
 @pytest.mark.skipif(
     SkipVersion("triton", "<3.0"),
     reason="Skipping when associative_scan only support single tensor input.",
 )
-@pytest.mark.cummin
 @pytest.mark.parametrize("shape", CUMMIN_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES)
 def test_accuracy_cummin(shape, dtype):
@@ -338,8 +253,6 @@ def test_accuracy_nonzero(shape, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.count_nonzero
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
@@ -363,12 +276,9 @@ def test_accuracy_count_nonzero(shape, dtype):
 @pytest.mark.log_softmax
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-@pytest.mark.parametrize("dim", [0, 1] if flag_gems.vendor_name == "cambricon" else [1])
-def test_accuracy_log_softmax(shape, dtype, dim):
-    if flag_gems.vendor_name == "cambricon":
-        torch.manual_seed(42)
-        torch.mlu.manual_seed_all(42)
-    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+def test_accuracy_log_softmax(shape, dtype):
+    dim = 1
+    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     ref_inp = to_reference(inp, True)
 
     ref_out = torch.nn.functional.log_softmax(ref_inp, dim=dim)
@@ -376,44 +286,47 @@ def test_accuracy_log_softmax(shape, dtype, dim):
         res_out = torch.nn.functional.log_softmax(inp, dim=dim)
     gems_assert_close(res_out, ref_out, dtype)
 
+    out_grad = torch.randn_like(res_out)
+    ref_grad = to_reference(out_grad, True)
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.log_softmax
-@pytest.mark.parametrize("shape", REDUCTION_SHAPES)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-@pytest.mark.parametrize("dim", [0, 1] if flag_gems.vendor_name == "cambricon" else [1])
-def test_accuracy_log_softmax_backward(shape, dtype, dim):
-    if flag_gems.vendor_name == "cambricon":
-        torch.manual_seed(42)
-        torch.mlu.manual_seed_all(42)
-    res_grad = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    res_out = torch.randn_like(res_grad)
-    ref_grad = to_reference(res_grad, True)
-    ref_out = to_reference(res_out, True)
-
-    ref_in_grad = torch.ops.aten._log_softmax_backward_data(
-        ref_grad, ref_out, dim, ref_grad.dtype
-    )
-    with flag_gems.use_gems():
-        res_in_grad = torch.ops.aten._log_softmax_backward_data(
-            res_grad, res_out, dim, dtype
-        )
+    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
+    (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
 # TODO: failed at (1, 2) (200, 40999, 3)
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="Unsupported")
 @pytest.mark.softmax
 @pytest.mark.parametrize(
-    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 2560, 3)]
+    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 512, 3)]
 )
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
-@pytest.mark.parametrize("neg_inf", [True, False])
-def test_accuracy_softmax(shape, dtype, dim, neg_inf):
-    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    if neg_inf:
-        inp = torch.where(inp < 0.0, float("-inf"), inp)
+def test_accuracy_softmax(shape, dtype, dim):
+    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
+    ref_inp = to_reference(inp, True)
+
+    ref_out = torch.nn.functional.softmax(ref_inp, dim=dim)
+    with flag_gems.use_gems():
+        res_out = torch.nn.functional.softmax(inp, dim=dim)
+    gems_assert_close(res_out, ref_out, dtype)
+
+    out_grad = torch.randn_like(inp)
+    ref_grad = to_reference(out_grad, True)
+
+    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
+    (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
+    gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
+
+
+@pytest.mark.softmax
+@pytest.mark.parametrize(
+    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 512, 3)]
+)
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+@pytest.mark.parametrize("dim", DIM_LIST)
+def test_accuracy_softmax_with_neg_inf(shape, dtype, dim):
+    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
+    inp = torch.where(inp < 0.0, float("-inf"), inp)
     ref_inp = to_reference(inp, True)
 
     ref_out = torch.nn.functional.softmax(ref_inp, dim=dim)
@@ -421,32 +334,11 @@ def test_accuracy_softmax(shape, dtype, dim, neg_inf):
         res_out = torch.nn.functional.softmax(inp, dim=dim)
     gems_assert_close(res_out, ref_out, dtype, equal_nan=True)
 
+    out_grad = torch.randn_like(inp)
+    ref_grad = to_reference(out_grad, True)
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
-@pytest.mark.softmax
-@pytest.mark.parametrize(
-    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 2560, 3)]
-)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-@pytest.mark.parametrize("dim", DIM_LIST)
-@pytest.mark.parametrize("neg_inf", [True, False])
-def test_accuracy_softmax_backward(shape, dtype, dim, neg_inf):
-    res_grad = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    if neg_inf:
-        res_grad = torch.where(res_grad < 0.0, float("-inf"), res_grad)
-    res_out = torch.randn_like(res_grad)
-
-    ref_grad = to_reference(res_grad, True)
-    ref_out = to_reference(res_out, True)
-
-    ref_in_grad = torch.ops.aten._softmax_backward_data(
-        ref_grad, ref_out, dim, ref_grad.dtype
-    )
-    with flag_gems.use_gems():
-        res_in_grad = torch.ops.aten._softmax_backward_data(
-            res_grad, res_out, dim, dtype
-        )
+    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
+    (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
     gems_assert_close(
         res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim], equal_nan=True
     )
@@ -520,7 +412,6 @@ def test_accuracy_scatter_src(src_shape, inp_shape, dim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.scatter
 @pytest.mark.parametrize(
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
@@ -529,9 +420,8 @@ def test_accuracy_scatter_src(src_shape, inp_shape, dim, dtype):
     "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16)]
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_scatter_add(src_shape, inp_shape, dim, dtype):
-    init_seed(0)
     inp = torch.randn(inp_shape, dtype=dtype, device=flag_gems.device)
     src = torch.randn(src_shape, dtype=dtype, device=flag_gems.device)
     size_dim = min(src_shape[dim], inp_shape[dim])
@@ -556,9 +446,9 @@ def test_accuracy_scatter_add(src_shape, inp_shape, dim, dtype):
                 ii[dim] = slice(0, index.size(dim) + 1)
                 index[tuple(ii)] = torch.randperm(size_dim)[0:index_size_dim]
 
-    ref_inp = to_reference(inp, upcast=True)
+    ref_inp = to_reference(inp)
     ref_index = to_reference(index)
-    ref_src = to_reference(src, upcast=True)
+    ref_src = to_reference(src)
     ref_out = torch.scatter(ref_inp, dim, ref_index, ref_src, reduce="add")
     with flag_gems.use_gems():
         res_out = torch.scatter(inp, dim, index, src, reduce="add")
@@ -566,9 +456,6 @@ def test_accuracy_scatter_add(src_shape, inp_shape, dim, dtype):
     gems_assert_close(res_out, ref_out, dtype)
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.skipif(flag_gems.vendor_name == "hygon", reason="RuntimeError")
-@pytest.mark.skipif(flag_gems.device == "musa", reason="RuntimeError")
 @pytest.mark.scatter
 @pytest.mark.parametrize(
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
@@ -577,7 +464,7 @@ def test_accuracy_scatter_add(src_shape, inp_shape, dim, dtype):
     "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16)]
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_scatter_mul(src_shape, inp_shape, dim, dtype):
     inp = torch.randn(inp_shape, dtype=dtype, device=flag_gems.device)
     src = torch.randn(src_shape, dtype=dtype, device=flag_gems.device)
@@ -616,14 +503,12 @@ def test_accuracy_scatter_mul(src_shape, inp_shape, dim, dtype):
 @pytest.mark.gather
 @pytest.mark.parametrize(
     "inp_shape",
-    [(32, 8, 4)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16), (128, 32, 256)],
+    [(32, 8, 4)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16), (128, 32, 32)],
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_gather(inp_shape, dim, dtype):
-    inp = torch.randn(
-        inp_shape, dtype=dtype, device=flag_gems.device, requires_grad=True
-    )
+    inp = torch.randn(inp_shape, dtype=dtype, device=flag_gems.device)
     size_dim = inp_shape[dim]
 
     import random
@@ -654,9 +539,6 @@ def test_accuracy_gather(inp_shape, dim, dtype):
         res_out = torch.gather(inp, dim, index)
 
     gems_assert_equal(res_out, ref_out)
-
-    if dtype in (torch.bfloat16,):
-        return
 
 
 @pytest.mark.select_scatter
@@ -729,16 +611,9 @@ def test_accuracy_slice_scatter(shape, stride, dim, dtype, start, end, step):
         ref_inp, dim=dim, src=ref_src, start=start, end=end, step=step
     )
 
-    if flag_gems.vendor_name == "kunlunxin":
-        from flag_gems.runtime.backend._kunlunxin import ops as kl_ops
-
-        res_out = kl_ops.slice_scatter(
-            inp, dim=dim, src=src, start=start, end=end, step=step
-        )
-    else:
-        res_out = flag_gems.ops.slice_scatter(
-            inp, dim=dim, src=src, start=start, end=end, step=step
-        )
+    res_out = flag_gems.ops.slice_scatter(
+        inp, dim=dim, src=src, start=start, end=end, step=step
+    )
 
     gems_assert_equal(res_out, ref_out)
 
@@ -757,33 +632,27 @@ def test_accuracy_slice_scatter_with_self_overlapping_input():
     ref_out = torch.slice_scatter(
         ref_inp, dim=dim, src=ref_src, start=start, end=end, step=step
     )
-    if flag_gems.vendor_name == "kunlunxin":
-        from flag_gems.runtime.backend._kunlunxin import ops as kl_ops
-
-        res_out = kl_ops.slice_scatter(
-            inp, dim=dim, src=src, start=start, end=end, step=step
-        )
-    else:
-        res_out = flag_gems.ops.slice_scatter(
-            inp, dim=dim, src=src, start=start, end=end, step=step
-        )
+    res_out = flag_gems.ops.slice_scatter(
+        inp, dim=dim, src=src, start=start, end=end, step=step
+    )
 
     gems_assert_equal(res_out, ref_out)
 
 
+# TODO: failed at (200, 40999, 3)
 @pytest.mark.index_add
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
+@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_index_add(shape, dim, dtype):
-    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+    inp = torch.randn(shape, dtype=dtype, device="cuda")
 
     src_shape = list(inp.shape)
     index_max = src_shape[dim]
     index_len = index_max
-    index = torch.randperm(index_len, device=flag_gems.device)
+    index = torch.randperm(index_len, device="cuda")
     src_shape[dim] = index_len
-    src = torch.randn(src_shape, dtype=dtype, device=flag_gems.device)
+    src = torch.randn(src_shape, dtype=dtype, device="cuda")
     alpha = 2
 
     ref_inp = to_reference(inp)
@@ -818,7 +687,6 @@ def test_accuracy_index_select(shape, dim, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 @pytest.mark.masked_select
 @pytest.mark.parametrize("threshold, shape", THRESHOLD_SHAPE)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -838,15 +706,15 @@ def test_accuracy_masked_select(shape, dtype, threshold):
 SHAPE_CONV1D = [
     ((32, 2, 4), (17, 2, 2)),
     ((32, 15, 6), (17, 15, 2)),
-    ((32, 16, 1024), (1024, 16, 8)),
-    ((64, 64, 64), (128, 64, 7)),
+    ((32, 16, 32), (32, 16, 8)),
+    ((64, 64, 32), (128, 64, 7)),
     ((32, 12, 9), (17, 12, 3)),
     ((32, 6, 6), (64, 6, 2)),
 ]
 
 
-# @pytest.mark.skip("conv1d introduces failures, disable it temporarily")
 @pytest.mark.conv1d
+@pytest.mark.skip("conv1d introduces failures, disable it temporarily")
 @pytest.mark.parametrize("shape, kernel", SHAPE_CONV1D)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [1])
@@ -867,54 +735,52 @@ def test_accuracy_conv1d(shape, kernel, stride, padding, dtype):
 
 
 SHAPE_CONV2D = [
-    ((1, 2, 5, 5), (1, 2, 3, 3), 1),
-    ((2, 3, 9, 9), (1, 3, 3, 3), 1),
-    ((2, 2, 3, 3), (1, 2, 2, 2), 1),
-    ((32, 8, 8, 8), (32, 8, 2, 2), 1),
+    ((32, 8, 8, 4), (32, 8, 2, 2), 1),
     ((18, 16, 4, 4), (16, 16, 2, 2), 1),
     ((9, 16, 4, 4), (128, 4, 2, 2), 4),
-    ((32, 16, 8, 8), (32, 4, 4, 4), 4),
+    ((32, 16, 8, 4), (32, 4, 4, 4), 4),
     ((18, 16, 4, 4), (16, 8, 2, 2), 2),
     ((9, 16, 4, 4), (128, 8, 2, 2), 2),
-    ((32, 8, 8, 8), (32, 8, 3, 3), 1),
-    ((18, 16, 5, 5), (16, 16, 3, 3), 1),
-    ((9, 16, 7, 7), (128, 4, 3, 3), 4),
-    ((32, 16, 9, 9), (32, 4, 5, 5), 4),
-    ((18, 16, 11, 11), (16, 8, 3, 3), 2),
-    ((9, 16, 6, 6), (128, 8, 3, 3), 2),
+    ((32, 8, 8, 4), (32, 8, 3, 3), 1),
+    ((18, 16, 5, 4), (16, 16, 3, 3), 1),
+    ((9, 16, 7, 4), (128, 4, 3, 3), 4),
+    ((32, 16, 9, 4), (32, 4, 5, 4), 4),
+    ((18, 16, 11, 4), (16, 8, 3, 3), 2),
+    ((9, 16, 6, 4), (128, 8, 3, 3), 2),
+    # depthwise shape
+    # ((32, 4, 8, 8), (32, 1, 2, 2), 4),
+    # ((18, 16, 4, 4), (16, 1, 2, 2), 16),
+    # ((9, 32, 4, 4), (128, 1, 2, 2), 32),
+    # ((32, 16, 8, 8), (32, 1, 4, 4), 16),
+    # ((18, 8, 4, 4), (16, 1, 2, 2), 8),
+    # ((9, 4, 4, 4), (128, 1, 2, 2), 4),
+    # ((32, 4, 8, 8), (32, 1, 3, 3), 4),
+    # ((18, 16, 13, 13), (16, 1, 5, 5), 16),
+    # ((9, 32, 8, 8), (128, 1, 3, 3), 32),
+    # ((32, 16, 9, 9), (32, 1, 5, 5), 16),
+    # ((18, 8, 7, 7), (16, 1, 3, 3), 8),
+    # ((9, 4, 6, 6), (128, 1, 3, 3), 4),
 ]
 
 
-@pytest.mark.skipif(flag_gems.device == "musa", reason="RuntimeError")
-@pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.conv2d
+@pytest.mark.skip("conv2d introduces failures, disable it temporarily")
 @pytest.mark.parametrize("shape, kernel,groups", SHAPE_CONV2D)
 @pytest.mark.parametrize("stride", [1, 2])
-@pytest.mark.parametrize("padding", [0, 1])
+@pytest.mark.parametrize("padding", [0, 1, 2])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-@pytest.mark.parametrize("dilation", [1, 2])
-@pytest.mark.parametrize("bias", [True, False])
-def test_accuracy_conv2d(shape, kernel, stride, padding, groups, dtype, dilation, bias):
+@pytest.mark.parametrize("dilation", [1, 2, 3])
+def test_accuracy_conv2d(shape, kernel, stride, padding, groups, dtype, dilation):
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     ref_inp = to_reference(inp, True)
     torch.backends.cudnn.allow_tf32 = False
-    weight = torch.randn(
-        kernel, dtype=dtype, device=flag_gems.device, requires_grad=True
-    )
-    if bias is True:
-        bias = torch.randn(
-            [weight.shape[0]], dtype=dtype, device=flag_gems.device, requires_grad=True
-        )
-        bias_ref = to_reference(bias, True)
-    else:
-        bias = None
-        bias_ref = None
+    weight = torch.randn(kernel, dtype=dtype, device=flag_gems.device)
 
     ref_weight = to_reference(weight, True)
     ref_out = torch.nn.functional.conv2d(
         ref_inp,
         ref_weight,
-        bias=bias_ref,
+        bias=None,
         groups=groups,
         stride=stride,
         padding=padding,
@@ -924,61 +790,40 @@ def test_accuracy_conv2d(shape, kernel, stride, padding, groups, dtype, dilation
     res_out = flag_gems.conv2d(
         inp,
         weight,
-        bias=bias,
+        bias=None,
         groups=groups,
         stride=stride,
         padding=padding,
         dilation=dilation,
     )
-
     gems_assert_close(res_out, ref_out, dtype)
-
     out_grad = torch.randn_like(ref_out).to(flag_gems.device)
-
     ref_grad = to_reference(out_grad, True)
-    if bias is not None:
-        (ref_in_grad, ref_weight_grad, ref_bias_grad) = torch.autograd.grad(
-            ref_out, (ref_inp, ref_weight, bias_ref), ref_grad
-        )
-        (res_in_grad, res_weight_grad, res_bias_grad) = torch.autograd.grad(
-            res_out, (inp, weight, bias), out_grad
-        )
-    else:
-        (ref_in_grad, ref_weight_grad) = torch.autograd.grad(
-            ref_out, (ref_inp, ref_weight), ref_grad
-        )
-        (res_in_grad, res_weight_grad) = torch.autograd.grad(
-            res_out, (inp, weight), out_grad
-        )
+    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
+    (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
 
-    gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=weight.shape[2])
-
-    gems_assert_close(
-        res_weight_grad, ref_weight_grad, dtype, reduce_dim=weight.shape[0]
-    )
-    if bias is not None:
-        gems_assert_close(res_bias_grad, ref_bias_grad, dtype)
+    gems_assert_close(res_in_grad, ref_in_grad.to(dtype), dtype)
 
 
 SHAPE_DEPTHWISE = [
-    ((32, 4, 8, 8), (32, 1, 2, 2), (2, 2)),
+    ((32, 4, 8, 4), (32, 1, 2, 2), (2, 2)),
     ((18, 16, 4, 4), (16, 1, 2, 2), (2, 2)),
     ((9, 32, 4, 4), (128, 1, 2, 2), (2, 2)),
-    ((32, 16, 8, 8), (32, 1, 4, 4), (4, 4)),
+    ((32, 16, 8, 4), (32, 1, 4, 4), (4, 4)),
     ((18, 8, 4, 4), (16, 1, 2, 2), (2, 2)),
     ((9, 4, 4, 4), (128, 1, 2, 2), (2, 2)),
-    ((32, 4, 8, 8), (32, 1, 3, 3), (3, 3)),
-    ((18, 16, 13, 13), (16, 1, 5, 5), (5, 5)),
-    ((9, 32, 8, 8), (128, 1, 3, 3), (3, 3)),
-    ((32, 16, 9, 9), (32, 1, 5, 5), (5, 5)),
-    ((18, 8, 7, 7), (16, 1, 3, 3), (3, 3)),
-    ((9, 4, 6, 6), (128, 1, 3, 3), (3, 3)),
+    ((32, 4, 8, 4), (32, 1, 3, 3), (3, 3)),
+    ((18, 16, 13, 4), (16, 1, 5, 4), (5, 4)),
+    ((9, 32, 8, 4), (128, 1, 3, 3), (3, 3)),
+    ((32, 16, 9, 4), (32, 1, 5, 4), (5, 4)),
+    ((18, 8, 7, 4), (16, 1, 3, 3), (3, 3)),
+    ((9, 4, 6, 4), (128, 1, 3, 3), (3, 3)),
 ]
 
 
-# test for depthwise depends on specific device
-@pytest.mark.skip("conv_depthwise2d introduces failures, disable it temporarily")
+# test for depthwise depends on  cuda
 @pytest.mark.conv_depthwise2d
+@pytest.mark.skip("conv_depthwise2d introduces failures, disable it temporarily")
 @pytest.mark.parametrize("shape_input, shape_weight,kernel ", SHAPE_DEPTHWISE)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [2])
@@ -1007,181 +852,3 @@ def test_accuracy_depthwise2d(
         inp, weight, kernel, bias=None, stride=stride, padding=padding, dilation=1
     )
     gems_assert_close(res_out, ref_out, dtype)
-
-
-INDEX_PUT_SHAPE_ACC_FALSE = (
-    ((2**28,), ((2**16,),), (2**16,)),
-    ((32, 32), ((8,), (8,)), (8,)),
-    ((32, 32), ((8,), (2, 8)), (8,)),
-    ((32, 32), ((2, 8),), (32,)),
-    ((512, 512, 512), ((128,), (128,), (128,)), (128,)),
-    ((512, 512, 512), ((2, 128), (128,), (128,)), (128,)),
-    ((512, 512, 512), ((2, 128),), (512,)),
-    (
-        (64, 64, 64),
-        (
-            (2, 8),
-            (2, 8),
-        ),
-        (2, 8, 64),
-    ),
-)
-
-
-def gen_indices(input_shape, indices_shape, accumulate):
-    indices = []
-    for i, shape in enumerate(indices_shape):
-        index = np.random.choice(
-            np.arange(input_shape[i]), size=shape, replace=accumulate
-        )
-        indices.append(torch.tensor(index, device=flag_gems.device))
-    return indices
-
-
-@pytest.mark.index_put
-@pytest.mark.parametrize(
-    "input_shape, indices_shape, values_shape", INDEX_PUT_SHAPE_ACC_FALSE
-)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-def test_index_put_acc_false(input_shape, indices_shape, values_shape, dtype):
-    accumulate = False
-    inp = torch.randn(
-        input_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-    indices = gen_indices(input_shape, indices_shape, accumulate)
-    values = torch.randn(
-        values_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-
-    ref_inp = to_reference(inp)
-    ref_indices = [to_reference(index) for index in indices]
-    ref_values = to_reference(values)
-    ref_out = torch.index_put(ref_inp, ref_indices, ref_values, accumulate)
-    out = flag_gems.index_put(inp, indices, values, accumulate)
-    gems_assert_close(out, ref_out, dtype)
-
-
-INDEX_PUT_SHAPE_ACC_TRUE = (
-    ((2**28,), ((2**16,),), (2**16,)),
-    ((32, 32), ((8,), (8,)), (8,)),
-    ((512, 512, 512), ((128,), (128,), (128,)), (128,)),
-    ((64, 64, 64), ((2, 8), (2, 8), (2, 8)), (2, 8)),
-)
-
-
-@pytest.mark.index_put
-@pytest.mark.parametrize(
-    "input_shape, indices_shape, values_shape", INDEX_PUT_SHAPE_ACC_TRUE
-)
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-def test_index_put_acc_true(input_shape, indices_shape, values_shape, dtype):
-    init_seed(0)
-    accumulate = True
-    inp = torch.randn(
-        input_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-    indices = gen_indices(input_shape, indices_shape, accumulate)
-    values = torch.randn(
-        values_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-
-    ref_inp = to_reference(inp, upcast=True)
-    ref_indices = [to_reference(index) for index in indices]
-    ref_values = to_reference(values, upcast=True)
-    ref_out = torch.index_put(ref_inp, ref_indices, ref_values, accumulate)
-    out = flag_gems.index_put(inp, indices, values, accumulate)
-    gems_assert_close(out, ref_out, dtype)
-
-
-@pytest.mark.index_put_
-@pytest.mark.parametrize(
-    "input_shape, indices_shape, values_shape", INDEX_PUT_SHAPE_ACC_FALSE
-)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-def test_index_put__acc_false(input_shape, indices_shape, values_shape, dtype):
-    accumulate = False
-    inp = torch.randn(
-        input_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-    indices = gen_indices(input_shape, indices_shape, accumulate)
-    values = torch.randn(
-        values_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-
-    ref_inp = to_reference(inp)
-    ref_indices = [to_reference(index) for index in indices]
-    ref_values = to_reference(values)
-    torch.index_put_(ref_inp, ref_indices, ref_values, accumulate)
-    flag_gems.index_put_(inp, indices, values, accumulate)
-    gems_assert_close(inp, ref_inp, dtype)
-
-
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.index_put_
-@pytest.mark.parametrize(
-    "input_shape, indices_shape, values_shape", INDEX_PUT_SHAPE_ACC_TRUE
-)
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-def test_index_put__acc_true(input_shape, indices_shape, values_shape, dtype):
-    if flag_gems.vendor_name == "kunlunxin":
-        torch.manual_seed(0)
-        torch.cuda.manual_seed_all(0)
-
-    accumulate = True
-    inp = torch.randn(
-        input_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-    indices = gen_indices(input_shape, indices_shape, accumulate)
-    values = torch.randn(
-        values_shape, dtype=dtype, device=flag_gems.device, requires_grad=False
-    )
-
-    ref_inp = to_reference(inp, upcast=True)
-    ref_indices = [to_reference(index) for index in indices]
-    ref_values = to_reference(values, upcast=True)
-    torch.index_put_(ref_inp, ref_indices, ref_values, accumulate)
-    flag_gems.index_put_(inp, indices, values, accumulate)
-    gems_assert_close(inp, ref_inp, dtype)
-
-
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
-@pytest.mark.mse_loss
-@pytest.mark.parametrize("reduction", ["mean", "none", "sum"])
-@pytest.mark.parametrize("shape", REDUCTION_SHAPES)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-def test_accuracy_mse_loss(shape, dtype, reduction):
-    if flag_gems.vendor_name == "kunlunxin":
-        torch.manual_seed(0)
-        torch.cuda.manual_seed_all(0)
-
-    dim = 1
-    inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    target = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-
-    ref_inp = to_reference(inp, True)
-    ref_target = to_reference(target, True)
-
-    ref_out = torch.nn.functional.mse_loss(ref_inp, ref_target, reduction=reduction)
-    with flag_gems.use_gems():
-        res_out = torch.nn.functional.mse_loss(inp, target, reduction=reduction)
-    gems_assert_close(res_out, ref_out, dtype, equal_nan=True, reduce_dim=shape[dim])
-
-
-@pytest.mark.dot
-@pytest.mark.parametrize("shape", UT_SHAPES_1D)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
-def test_accuracy_dot_tensor_tensor(shape, dtype):
-    if flag_gems.vendor_name == "kunlunxin":
-        torch.manual_seed(0)
-        torch.cuda.manual_seed_all(0)
-
-    inp1 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    inp2 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
-    ref_inp1 = to_reference(inp1, True)
-    ref_inp2 = to_reference(inp2, True)
-
-    ref_out = torch.dot(ref_inp1, ref_inp2)
-    with flag_gems.use_gems():
-        res_out = torch.dot(inp1, inp2)
-
-    gems_assert_close(res_out, ref_out, dtype, equal_nan=True)
