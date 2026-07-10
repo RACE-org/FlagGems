@@ -6,6 +6,7 @@ from typing import Iterable, Sequence, Tuple
 import torch
 import triton
 import triton.language as tl
+import flag_gems
 
 from ..utils import triton_lang_extension as tle
 
@@ -190,7 +191,9 @@ def heuristics_for_tile_size(max_tile_size, *sizes):
 
 # This should be part of CodeGenConfig
 def heuristics_for_num_warps(tile_size):
-    if tile_size < 2048:
+    if flag_gems.vendor_name == "fant":
+        return 1
+    elif tile_size < 2048:
         return 4
     elif tile_size < 4096:
         return 8

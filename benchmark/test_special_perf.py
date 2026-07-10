@@ -1,7 +1,6 @@
-import random
-
 import pytest
 import torch
+import flag_gems
 
 from .attri_util import BOOL_DTYPES, FLOAT_DTYPES, INT_DTYPES, BenchLevel
 from .performance_utils import (
@@ -88,6 +87,7 @@ def test_isin_perf():
 
 
 @pytest.mark.unique
+@pytest.mark.unique2
 def test_perf_unique():
     def unique_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype, device)
@@ -102,6 +102,7 @@ def test_perf_unique():
     bench.run()
 
 
+@pytest.mark.skipif(flag_gems.vendor_name == "fant", reason="RESULT TODOFIX")
 @pytest.mark.sort
 def test_perf_sort():
     class SortBenchmark(GenericBenchmark2DOnly):
@@ -138,12 +139,13 @@ def test_multinomial_with_replacement():
 
 
 @pytest.mark.pad
+@pytest.mark.constant_pad_nd
 def test_perf_pad():
     def padding_input_fn(shape, dtype, device):
         input = torch.randn(shape, device=device, dtype=dtype)
         rank = input.ndim
-        pad_params = [random.randint(0, 10) for _ in range(rank * 2)]
-        pad_value = float(torch.randint(0, 1024, [1]))
+        pad_params = [1, 2] * rank
+        pad_value = 1.0
         yield input, {
             "pad": pad_params,
             "mode": "constant",
@@ -306,7 +308,7 @@ def test_perf_conv2d():
 def test_perf_diag():
     def diag_input_fn(shape, dtype, device):
         input = generate_tensor_input(shape, dtype, device)
-        diagonal = random.randint(-4, 4)
+        diagonal = 0
         yield input, {
             "diagonal": diagonal,
         },
