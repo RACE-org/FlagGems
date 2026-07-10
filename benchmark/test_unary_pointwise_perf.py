@@ -3,8 +3,16 @@ from typing import Generator
 import pytest
 import torch
 
-from .attri_util import BOOL_DTYPES, DEFAULT_METRICS, FLOAT_DTYPES, INT_DTYPES
-from .performance_utils import Benchmark, generate_tensor_input
+import flag_gems
+
+from .attri_util import (
+    BOOL_DTYPES,
+    COMPLEX_DTYPES,
+    DEFAULT_METRICS,
+    FLOAT_DTYPES,
+    INT_DTYPES,
+)
+from .performance_utils import Benchmark, generate_tensor_input, vendor_name
 
 
 class UnaryPointwiseBenchmark(Benchmark):
@@ -31,20 +39,39 @@ class UnaryPointwiseBenchmark(Benchmark):
 
 forward_operations = [
     ("abs", torch.abs, FLOAT_DTYPES),
+    *(
+        []
+        if flag_gems.device == "musa"  # angle is not supported on musa
+        else [
+            (
+                "angle",
+                torch.angle,
+                (
+                    [] if flag_gems.device == "tpu" else COMPLEX_DTYPES
+                )  # complex angle not supported on tpu
+                + [torch.float32]
+                + INT_DTYPES
+                + BOOL_DTYPES,
+            )
+        ]
+    ),
     ("erf", torch.erf, FLOAT_DTYPES),
     ("exp", torch.exp, FLOAT_DTYPES),
     ("neg", torch.neg, FLOAT_DTYPES),
     ("reciprocal", torch.reciprocal, FLOAT_DTYPES),
     ("rsqrt", torch.rsqrt, FLOAT_DTYPES),
     ("logical_not", torch.logical_not, INT_DTYPES + BOOL_DTYPES),
+    ("log", torch.log, FLOAT_DTYPES),
     # ("triu", torch.triu, FLOAT_DTYPES),  # do not support 1d shapes
     # Dropout
     ("native_dropout", torch.nn.Dropout(p=0.5), FLOAT_DTYPES),
     ("dropout", torch.nn.Dropout(p=0.5), FLOAT_DTYPES),
     # Activation operations
+    ("elu", torch.nn.functional.elu, FLOAT_DTYPES),
     ("gelu", torch.nn.functional.gelu, FLOAT_DTYPES),
     ("relu", torch.nn.functional.relu, FLOAT_DTYPES),
     ("sigmoid", torch.sigmoid, FLOAT_DTYPES),
+    ("log_sigmoid", torch.nn.functional.logsigmoid, FLOAT_DTYPES),
     ("silu", torch.nn.functional.silu, FLOAT_DTYPES),
     # Trigonometric operations
     ("cos", torch.cos, FLOAT_DTYPES),
@@ -72,6 +99,8 @@ forward_operations = [
     ],
 )
 def test_general_unary_pointwise_perf(op_name, torch_op, dtypes):
+    if vendor_name == "kunlunxin" and op_name == "elu":
+        pytest.skip("RUNTIME TODOFIX")
     bench = UnaryPointwiseBenchmark(op_name=op_name, torch_op=torch_op, dtypes=dtypes)
     bench.run()
 
@@ -99,5 +128,37 @@ def test_general_unary_pointwise_backward_perf(op_name, torch_op, dtypes):
         torch_op=torch_op,
         dtypes=dtypes,
         is_backward=True,
+    )
+    bench.run()
+
+
+class ToDtypeBenchmark(UnaryPointwiseBenchmark):
+    def get_input_iter(self, cur_dtype) -> Generator:
+        for shape in self.shapes:
+            inp = torch.randn(shape, dtype=torch.float32, device=self.device)
+            yield inp, cur_dtype
+
+
+@pytest.mark.to_dtype
+def test_to_dtype_perf():
+    bench = ToDtypeBenchmark(
+        op_name="to_dtype",
+        torch_op=torch.Tensor.to,
+        dtypes=[torch.float16, torch.bfloat16, torch.float64],
+    )
+    bench.run()
+
+
+class GluBenchmark(UnaryPointwiseBenchmark):
+    def set_more_shapes(self):
+        return
+
+
+@pytest.mark.to_dtype
+def test_glu_perf():
+    bench = GluBenchmark(
+        op_name="glu",
+        torch_op=torch.nn.functional.glu,
+        dtypes=FLOAT_DTYPES,
     )
     bench.run()

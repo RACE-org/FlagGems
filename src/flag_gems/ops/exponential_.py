@@ -9,31 +9,13 @@ from flag_gems.utils.random_utils import (
     uint_to_uniform_float,
 )
 
+from .. import runtime
 from ..runtime import torch_device_fn
 
-
-def heur_block(args):
-    if args["N"] <= 512:
-        return 512
-    else:
-        return 1024
+logger = logging.getLogger(__name__)
 
 
-def heur_num_warps(args):
-    if args["N"] <= 512:
-        return 4
-    elif args["N"] <= 1024:
-        return 8
-    else:
-        return 16
-
-
-@triton.heuristics(
-    {
-        "BLOCK": heur_block,
-        "num_warps": heur_num_warps,
-    }
-)
+@triton.heuristics(runtime.get_heuristic_config("exponential_"))
 @triton.jit(do_not_specialize=["philox_seed", "philox_offset", "N"])
 def fused_exponential_kernel(
     out_ptr,
@@ -102,7 +84,7 @@ def transform_exponential(u, lambd, eps):
 
 
 def exponential_(x, lambd: float = 1.0, *, gen=None):
-    logging.debug("GEMS EXPONENTIAL_")
+    logger.debug("GEMS EXPONENTIAL_")
     dtype = x.dtype
     device = x.device
     inplace = x.is_contiguous()
@@ -114,7 +96,7 @@ def exponential_(x, lambd: float = 1.0, *, gen=None):
     # (TODO) Using Triton autotuner makes kernel parameters opaque to the caller,
     # hence we cannot obtain the per thread offset as in Pytorch.
     increment = triton.cdiv(N, UNROLL)
-    philox_seed, philox_offset = philox_backend_seed_offset(increment)
+    philox_seed, philox_offset = philox_backend_seed_offset(increment, generator=gen)
     eps = torch.finfo(dtype).eps
     x_ = x if inplace else torch.empty(x.size(), dtype=dtype, device=device)
     with torch_device_fn.device(device):

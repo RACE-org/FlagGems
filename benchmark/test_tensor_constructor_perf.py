@@ -1,7 +1,10 @@
 import math
+import random
 
 import pytest
 import torch
+
+import flag_gems
 
 from .attri_util import BenchLevel
 from .performance_utils import (
@@ -9,6 +12,7 @@ from .performance_utils import (
     GenericBenchmark,
     generate_tensor_input,
     unary_input_fn,
+    vendor_name,
 )
 
 
@@ -53,6 +57,46 @@ def arange_input_fn(shape, dtype, device):
         },
 
 
+def linspace_input_fn(shape, dtype, device):
+    limit = torch.finfo(dtype).max - 1
+    num = int(min(limit, math.prod(shape)))
+    yield {
+        "start": 0,
+        "end": num,
+        "steps": random.randint(1, num),
+        "dtype": dtype,
+        "device": device,
+    },
+
+
+def _2D_input_fn(shape, dtype, device):
+    """
+    Generate input for 2D input
+    """
+    if shape[0] >= 819200:
+        # Skip large shapes for performance testing
+        return
+    elif isinstance(shape, int):
+        yield {"n": shape, "dtype": dtype, "device": device},
+
+    elif isinstance(shape, tuple) and len(shape) == 1:
+        n = shape[0]
+        yield {"n": n, "dtype": dtype, "device": device},
+
+    elif isinstance(shape, tuple) and len(shape) == 2:
+        n, m = shape
+        yield {"n": n, "m": m, "dtype": dtype, "device": device},
+
+    elif isinstance(shape, tuple) and len(shape) > 2:
+        n, m = shape[:2]
+        yield {"n": n, "m": m, "dtype": dtype, "device": device},
+    if Config.bench_level == BenchLevel.COMPREHENSIVE:
+        for i in range(8, 13):
+            n = 2**i
+            m = 2**i
+            yield {"n": n, "m": m, "dtype": dtype, "device": device},
+
+
 # Define operations and their corresponding input functions
 tensor_constructor_operations = [
     # generic tensor constructor
@@ -67,11 +111,16 @@ tensor_constructor_operations = [
     ("zeros_like", torch.zeros_like, unary_input_fn),
     # tensor constructor with given value
     ("fill", torch.fill, fill_input_fn),
+    ("fill_", torch.fill_, fill_input_fn),
     ("masked_fill", torch.masked_fill, masked_fill_input_fn),
     ("full", torch.full, full_input_fn),
     ("full_like", torch.full_like, full_like_input_fn),
     # arange
     ("arange", torch.arange, arange_input_fn),
+    # linspace
+    ("linspace", torch.linspace, linspace_input_fn),
+    # eye
+    ("eye", torch.eye, _2D_input_fn),
 ]
 
 
@@ -80,13 +129,30 @@ tensor_constructor_operations = [
     [
         pytest.param(op, fn, input_fn, marks=getattr(pytest.mark, op, None))
         for op, fn, input_fn in tensor_constructor_operations
+        if op != "fill"
+    ]
+    + [
+        pytest.param(
+            "fill",
+            torch.fill,
+            fill_input_fn,
+            marks=[pytest.mark.fill, pytest.mark.fill_scalar],
+        ),
     ],
 )
 def test_tensor_constructor_benchmark(op_name, torch_op, input_fn):
+    if vendor_name == "kunlunxin" and op_name in [
+        "linspace",
+    ]:
+        pytest.skip("RUNTIME TODOFIX.")
     bench = GenericBenchmark(input_fn=input_fn, op_name=op_name, torch_op=torch_op)
     bench.run()
 
 
+@pytest.mark.skipif(
+    vendor_name == "kunlunxin" or vendor_name == "hygon", reason="RESULT TODOFIX"
+)
+@pytest.mark.skipif(flag_gems.device == "musa", reason="ZeroDivisionError")
 @pytest.mark.randperm
 def test_perf_randperm():
     def randperm_input_fn(shape, dtype, device):

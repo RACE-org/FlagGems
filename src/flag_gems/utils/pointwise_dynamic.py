@@ -1,6 +1,5 @@
 import importlib
 import os
-from dataclasses import dataclass
 from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 import torch
@@ -8,15 +7,21 @@ import triton
 from triton.runtime.jit import JITFunction
 
 from flag_gems.utils.code_cache import code_cache_dir
-from flag_gems.utils.code_utils import IndentedBuffer
+from flag_gems.utils.code_utils import IndentedBuffer, write_atomic
 from flag_gems.utils.shape_utils import (
+    MemOverlap,
     all_c_contiguous,
     all_the_same_shape,
     all_the_same_stride,
+    broadcast_shapes,
     broadcasted_stride,
+    check_tensor_attributes,
+    has_internal_overlapping,
 )
 from flag_gems.utils.tensor_wrapper import StridedBuffer
 from flag_gems.utils.type_utils import ELEMENTWISE_TYPE_PROMOTION_KIND, type_promotion
+
+from .codegen_config_utils import CodeGenConfig, get_codegen_config
 
 
 # ------------------ Operation Description ---------------------------
@@ -213,22 +218,6 @@ class FunctionSchema:
 
     def __str__(self) -> str:
         return self.signature(outputs_in_arg=False)
-
-
-@dataclass
-class CodeGenConfig:
-    max_tile_size: int
-    max_grid_size: Tuple[int, int, int]
-    max_num_warps_per_cta: int
-
-    prefer_block_pointer: bool
-    prefer_1d_tile: bool
-    # gen_configs: -> configs
-    # prune_config: (as jit function, ) cofigs -> configs
-
-    def __post_init__(self):
-        if self.prefer_1d_tile:
-            self.prefer_block_pointer = False
 
 
 class KernelGenerator:
@@ -902,7 +891,7 @@ class WrapperGenerator:
             else:
                 code.writeline(f"out{i}_stride_order = (0,)")
 
-        code.writeline("with torch_device_fn._DeviceGuard(in0.device.index):")
+        code.writeline("with torch_device_fn.device(in0.device.index):")
         with code.indent():
             code.writeline(f"{self.jit_fn_name}[grid](")
             with code.indent():
@@ -962,7 +951,7 @@ class WrapperGenerator:
         for i in range(schema.num_output_tensors()):
             code.writeline(f"out{i}_strides = out{i}.stride()")
 
-        code.writeline("with torch_device_fn._DeviceGuard(in0.device.index):")
+        code.writeline("with torch_device_fn.device(in0.device.index):")
         with code.indent():
             code.writeline(f"{self.jit_fn_name}[grid](")
             with code.indent():
@@ -1089,13 +1078,7 @@ class PointwiseDynamicFunction:
         self._scalar_fn_cache_key = scalar_fn.cache_key
         self.pid = os.getpid()
 
-        self.config: CodeGenConfig = config or CodeGenConfig(
-            512,
-            (65536, 65536, 65536),
-            32,
-            True,
-            prefer_1d_tile=int(triton.__version__[0]) < 3,
-        )
+        self.config: CodeGenConfig = config or get_codegen_config()
 
         # instantiated & cached overloads
         self.overloads: Mapping[int, Callable] = {}
@@ -1136,6 +1119,11 @@ class PointwiseDynamicFunction:
             else:
                 outputs_that_need_allocation.append(i)
         # input arguments must be passed by position
+        if schema._is_tensor is not None:
+            if not check_tensor_attributes(args, (schema._is_tensor)):
+                raise ValueError(
+                    "Input arguments must be passed by position, and the corresponding dtype must be specified."
+                )
         in_tensors = [item for i, item in enumerate(args) if schema.is_tensor(i)]
 
         # output dtype promotions
@@ -1175,8 +1163,22 @@ class PointwiseDynamicFunction:
             # a simple strategy: all the undefined tensors will follow the first
             # tensor that is not broadcated, no attempts to simplify task, no reordering,
             # no dimenion collapsing
-            shapes = tuple(item.shape for item in tensors)
-            task_shape = torch.broadcast_shapes(*shapes)
+            shapes = tuple(item.shape for item in in_tensors)
+
+            task_shape = broadcast_shapes(shapes)
+
+            if out_tensors:
+                for index, item in enumerate(out_tensors):
+                    if list(item.shape) != list(task_shape):
+                        raise RuntimeError(
+                            f"out tensor at index {index} shape is invalid, should be {task_shape} but is {item.shape}!"
+                        )
+                    # output arguments must not have internal overlapping for pointwise operation
+                    if has_internal_overlapping(item) == MemOverlap.Yes:
+                        raise RuntimeError(
+                            "Pointwise Input arguments should not have internal overlapping."
+                        )
+
             ndim = len(task_shape)
             for item in tensors:
                 if item.shape == task_shape:
@@ -1257,18 +1259,19 @@ class PointwiseDynamicFunction:
         # library, but we find generating a module simpler, since we can generating 2 functions
         # the kernel and the wrapper, and the wrapper calls the kernel.
         file_name = (
-            f"pointwise_dynamic_{self._scalar_fn_cache_key}_rank_{ndim}_"
+            f"pointwise_dynamic_{self._scalar_fn_cache_key}_{kernel_name}_"
             f"{'1d_tile_' if self.config.prefer_1d_tile else ''}"
-            f"{'bptr_' if (not self.config.prefer_1d_tile and self.config.prefer_block_pointer) else ''}"
-            f"pid_{self.pid}.py"
+            f"{'bptr' if (not self.config.prefer_1d_tile and self.config.prefer_block_pointer) else ''}"
+            ".py"
         )
-        with open(code_cache_dir() / file_name, "wt", encoding="utf-8") as f:
-            f.write(code.getvalue())
+
+        file_path = code_cache_dir() / file_name
+        write_atomic(file_path, code.getvalue())
 
         # load
         spec = importlib.util.spec_from_file_location(
-            f"_gen_module_{self._scalar_fn_cache_key}_rank_{ndim}_pid_{self.pid}",
-            f.name,
+            f"_gen_module_{self._scalar_fn_cache_key}_rank_{ndim}",
+            file_path,
         )
         m = importlib.util.module_from_spec(spec)
         # do not expose it to sys.modules

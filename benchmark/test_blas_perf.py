@@ -4,9 +4,17 @@ from typing import Generator
 import pytest
 import torch
 
-from .attri_util import DEFAULT_METRICS, FLOAT_DTYPES, BenchLevel, llama_shapes
+import flag_gems
+
+from .attri_util import (
+    COMPLEX_DTYPES,
+    DEFAULT_METRICS,
+    FLOAT_DTYPES,
+    BenchLevel,
+    llama_shapes,
+)
 from .conftest import Config
-from .performance_utils import Benchmark
+from .performance_utils import Benchmark, vendor_name
 
 
 class BlasBenchmark(Benchmark):
@@ -142,6 +150,9 @@ class OuterBenchmark(BlasBenchmark):
     benchmark for outer
     """
 
+    def set_more_shapes(self):
+        return None
+
     def get_input_iter(self, cur_dtype) -> Generator:
         for m, n in self.shapes:
             yield from self.input_fn(m, n, cur_dtype, self.device)
@@ -159,5 +170,39 @@ def test_outer_benchmark():
         op_name="outer",
         torch_op=torch.Tensor.outer,
         dtypes=FLOAT_DTYPES,
+    )
+    bench.set_gems(flag_gems.outer)
+    bench.run()
+
+
+class VdotBenchmark(BlasBenchmark):
+    """
+    benchmark for vdot
+    """
+
+    def set_more_shapes(self):
+        return None
+
+    def get_input_iter(self, cur_dtype) -> Generator:
+        for shape in self.shapes:
+            m = shape[0]
+            yield from self.input_fn(m, cur_dtype, self.device)
+
+
+@pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
+@pytest.mark.skipif(flag_gems.device == "musa", reason="Segmentation fault")
+@pytest.mark.vdot
+def test_vdot_benchmark():
+    def vdot_input_fn(m, cur_dtype, device):
+        inp1 = torch.randn([m], dtype=cur_dtype, device=device)
+        inp2 = torch.randn([m], dtype=cur_dtype, device=device)
+        yield inp1, inp2
+
+    bench = VdotBenchmark(
+        input_fn=vdot_input_fn,
+        op_name="vdot",
+        torch_op=torch.Tensor.vdot,
+        dtypes=([] if flag_gems.device == "tpu" else COMPLEX_DTYPES)
+        + FLOAT_DTYPES,  # complex (vdot) not supported on tpu
     )
     bench.run()

@@ -9,10 +9,12 @@ from ..runtime import torch_device_fn
 from ..utils import libentry
 from ..utils import triton_lang_extension as tle
 
+logger = logging.getLogger(__name__)
+
 
 @libentry()
 @triton.autotune(
-    configs=runtime.get_triton_config("nonzero"),
+    configs=runtime.get_tuned_config("nonzero"),
     key=[
         "n_elements",
     ],
@@ -46,7 +48,7 @@ def nonzero_kernel(
 
 
 def nonzero(inp, *, as_tuple=False):
-    logging.debug("GEMS NONZERO")
+    logger.debug("GEMS NONZERO")
 
     inp_ndim = inp.ndim
 

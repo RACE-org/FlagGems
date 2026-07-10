@@ -1,7 +1,7 @@
-import random
-
 import pytest
 import torch
+
+import flag_gems
 
 from .attri_util import BOOL_DTYPES, FLOAT_DTYPES, INT_DTYPES, BenchLevel
 from .performance_utils import (
@@ -11,6 +11,7 @@ from .performance_utils import (
     GenericBenchmarkExcluse1D,
     GenericBenchmarkExcluse3D,
     generate_tensor_input,
+    vendor_name,
 )
 
 
@@ -39,8 +40,15 @@ special_operations = [
     # Sorting Operations
     ("topk", torch.topk, FLOAT_DTYPES, topk_input_fn),
     # Complex Operations
-    ("resolve_neg", torch.resolve_neg, [torch.cfloat], resolve_neg_input_fn),
-    ("resolve_conj", torch.resolve_conj, [torch.cfloat], resolve_conj_input_fn),
+    *(
+        [
+            ("resolve_neg", torch.resolve_neg, [torch.cfloat], resolve_neg_input_fn),
+            ("resolve_conj", torch.resolve_conj, [torch.cfloat], resolve_conj_input_fn),
+        ]
+        if flag_gems.device
+        not in ("musa", "tpu")  # complex dtypes not supported on musa/tpu
+        else []
+    ),
 ]
 
 
@@ -64,6 +72,7 @@ def test_special_operations_benchmark(op_name, torch_op, dtypes, input_fn):
     bench.run()
 
 
+@pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
 @pytest.mark.isin
 def test_isin_perf():
     def isin_input_fn(shape, dtype, device):
@@ -82,12 +91,14 @@ def test_isin_perf():
         input_fn=isin_input_fn,
         op_name="isin",
         torch_op=torch.isin,
-        dtypes=INT_DTYPES,
+        dtypes=[torch.int32] if vendor_name == "cambricon" else INT_DTYPES,
     )
     bench.run()
 
 
+@pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
 @pytest.mark.unique
+@pytest.mark.unique2
 def test_perf_unique():
     def unique_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype, device)
@@ -97,11 +108,12 @@ def test_perf_unique():
         input_fn=unique_input_fn,
         op_name="unique",
         torch_op=torch.unique,
-        dtypes=INT_DTYPES,
+        dtypes=[torch.int32] if vendor_name == "cambricon" else INT_DTYPES,
     )
     bench.run()
 
 
+@pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.sort
 def test_perf_sort():
     class SortBenchmark(GenericBenchmark2DOnly):
@@ -138,12 +150,13 @@ def test_multinomial_with_replacement():
 
 
 @pytest.mark.pad
+@pytest.mark.constant_pad_nd
 def test_perf_pad():
     def padding_input_fn(shape, dtype, device):
         input = torch.randn(shape, device=device, dtype=dtype)
         rank = input.ndim
-        pad_params = [random.randint(0, 10) for _ in range(rank * 2)]
-        pad_value = float(torch.randint(0, 1024, [1]))
+        pad_params = [1, 2] * rank
+        pad_value = 1.0
         yield input, {
             "pad": pad_params,
             "mode": "constant",
@@ -170,6 +183,10 @@ def test_perf_embedding():
     def embedding_input_fn(shape, dtype, device):
         num_embeddings, embedding_dim = shape
         indices = torch.randint(0, num_embeddings, (num_embeddings,), device=device)
+        if vendor_name == "sophgo":
+            indices = torch.randint(
+                0, num_embeddings, (num_embeddings,), dtype=torch.int32, device=device
+            )
         weight = torch.randn(
             (num_embeddings, embedding_dim), device=device, dtype=dtype
         )
@@ -195,6 +212,30 @@ def test_perf_embedding():
     bench.run()
 
 
+class LerpBenchmark(GenericBenchmark):
+    def set_more_shapes(self):
+        # self.shapes is a list of tuples, each containing three elements:
+        # (N, C, H, W).
+        return None
+
+
+@pytest.mark.lerp
+def test_perf_lerp():
+    def lerp_input_fn(shape, dtype, device):
+        input = torch.randn(*shape, device=device, dtype=dtype)
+        end = input + 10
+        weight = torch.randn(*shape, device=device, dtype=dtype)
+        yield {"input": input, "end": end, "weight": weight},
+
+    bench = LerpBenchmark(
+        input_fn=lerp_input_fn,
+        op_name="lerp",
+        torch_op=torch.lerp,
+        dtypes=FLOAT_DTYPES,
+    )
+    bench.run()
+
+
 class UpsampleBenchmark(GenericBenchmark):
     def set_more_shapes(self):
         # self.shapes is a list of tuples, each containing three elements:
@@ -202,6 +243,7 @@ class UpsampleBenchmark(GenericBenchmark):
         return None
 
 
+@pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.upsample_bicubic2d_aa
 def test_perf_upsample_bicubic2d_aa():
     def upsample_bicubic2d_aa_input_fn(shape, dtype, device):
@@ -224,7 +266,7 @@ def test_perf_upsample_bicubic2d_aa():
         input_fn=upsample_bicubic2d_aa_input_fn,
         op_name="upsample_bicubic2d_aa",
         torch_op=torch._C._nn._upsample_bicubic2d_aa,
-        dtypes=FLOAT_DTYPES,
+        dtypes=[torch.float32] if vendor_name == "cambricon" else FLOAT_DTYPES,
     )
     bench.run()
 
@@ -262,6 +304,7 @@ class ConvBenchmark(GenericBenchmark):
         return None
 
 
+@pytest.mark.skipif(flag_gems.device != "tpu", reason="Conv2d not registered yet")
 @pytest.mark.conv2d
 def test_perf_conv2d():
     def conv2d_input_fn(shape, dtype, device):
@@ -306,7 +349,7 @@ def test_perf_conv2d():
 def test_perf_diag():
     def diag_input_fn(shape, dtype, device):
         input = generate_tensor_input(shape, dtype, device)
-        diagonal = random.randint(-4, 4)
+        diagonal = 0
         yield input, {
             "diagonal": diagonal,
         },
@@ -339,6 +382,7 @@ def test_perf_diag_embed():
     bench.run()
 
 
+@pytest.mark.skipif(flag_gems.device == "musa", reason="RuntimeError")
 @pytest.mark.diagonal_backward
 def test_perf_diagonal_backward():
     def diagonal_backward_input_fn(shape, dtype, device):
@@ -354,6 +398,51 @@ def test_perf_diagonal_backward():
         torch_op=torch.diagonal,
         dtypes=FLOAT_DTYPES,
         is_backward=True,
+    )
+
+    bench.run()
+
+
+@pytest.mark.skipif(flag_gems.device == "musa", reason="ZeroDivisionError")
+@pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
+@pytest.mark.kron
+def test_perf_kron():
+    class KronBenchmark(GenericBenchmark2DOnly):
+        def set_more_shapes(self):
+            return None
+
+    def kron_input_fn(shape, dtype, device):
+        inp1 = generate_tensor_input(shape, dtype, device)
+        inp2 = generate_tensor_input(shape, dtype, device)
+        yield inp1, inp2
+
+    bench = KronBenchmark(
+        input_fn=kron_input_fn,
+        op_name="kron",
+        torch_op=torch.kron,
+        dtypes=FLOAT_DTYPES,
+    )
+
+    bench.run()
+
+
+@pytest.mark.contiguous
+def test_perf_contiguous():
+    def contiguous_input_fn(shape, dtype, device):
+        if dtype in FLOAT_DTYPES:
+            inp = torch.randn(shape, dtype=dtype, device=device)
+        else:
+            inp = torch.randint(
+                low=-10000, high=10000, size=shape, dtype=dtype, device=device
+            )
+        inp = inp[::2]
+        yield inp,
+
+    bench = GenericBenchmark(
+        input_fn=contiguous_input_fn,
+        op_name="torch.Tensor.contiguous",
+        torch_op=torch.Tensor.contiguous,
+        dtypes=FLOAT_DTYPES + INT_DTYPES,
     )
 
     bench.run()

@@ -10,6 +10,7 @@ return statement) here.
 
 These functions can be used in kernel progamming and are not bound to any grid.
 """
+
 import triton
 from triton import language as tl
 
@@ -42,6 +43,22 @@ def is_floating(x):
 @triton.jit
 def minimum_with_index_tie_break_right(a_value, a_index, b_value, b_index):
     mask = a_value < b_value
+    equal = a_value == b_value
+    if is_floating(a_value):
+        a_isnan = a_value != a_value
+        b_isnan = b_value != b_value
+        mask |= a_isnan and not b_isnan
+        # Consider NaNs as equal
+        equal |= a_isnan and b_isnan
+
+    # Prefer highest index if values are equal
+    mask |= equal & (a_index > b_index)
+    return tl.where(mask, a_value, b_value), tl.where(mask, a_index, b_index)
+
+
+@triton.jit
+def maximum_with_index_tie_break_right(a_value, a_index, b_value, b_index):
+    mask = a_value > b_value
     equal = a_value == b_value
     if is_floating(a_value):
         a_isnan = a_value != a_value

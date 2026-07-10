@@ -1,11 +1,21 @@
 import importlib
 import itertools
+import random
 
+import numpy as np
 import torch
 
 import flag_gems
 
 from .conftest import QUICK_MODE, TO_CPU
+
+fp64_is_supported = flag_gems.runtime.device.support_fp64
+bf16_is_supported = flag_gems.runtime.device.support_bf16
+int64_is_supported = flag_gems.runtime.device.support_int64
+
+
+def TestForwardOnly():
+    return flag_gems.vendor_name in []
 
 
 def SkipVersion(module_name, skip_pattern):
@@ -112,11 +122,50 @@ UPSAMPLE_SHAPES = [
 ]
 
 
-FLOAT_DTYPES = [torch.float16, torch.float32, torch.bfloat16]
-ALL_FLOAT_DTYPES = FLOAT_DTYPES + [torch.float64]
+KRON_SHAPES = [
+    [(), (2, 3)],
+    [(2, 3), ()],
+    [(0, 3), (2, 3)],
+    [(2, 3), (0,)],
+    [(0,), (0,)],
+    [(), ()],
+    [(1,), (2,)],
+    [(2,), (3,)],
+    [(2, 2), (3, 3)],
+    [(1, 2, 3), (2, 3, 4)],
+    [(1,), (2, 2)],
+    [(1, 2), (3, 4, 5)],
+    [(2,), (3, 4, 5, 6)],
+    [(2, 3, 4), (1,)],
+    [(5, 5), (4, 4)],
+    [(3, 3, 3), (2, 2, 2)],
+    [(4, 4, 4, 4), (2, 2, 2, 2)],
+    [(2, 3, 4), (3, 4, 5)],
+    [(1, 3, 5), (2, 4, 6)],
+    [(2, 4, 6, 8), (1, 3, 5, 7)],
+    [(1, 3), (1, 4)],
+    [(1, 1, 3), (1, 1, 2)],
+    [(2, 1, 4), (3, 1, 5)],
+    [(2, 2, 2, 2, 2), (1, 1, 1, 1, 1)],
+    [(1, 2, 3, 4, 5), (2, 3, 4, 5, 6)],
+    [(1,), (1,)],
+    [(10,), (10,)],
+    [(2, 3), (3, 2)],
+    [(3, 3), (3, 3)],
+    [(1, 1, 1), (2, 2, 2)],
+]
+# Add some test cases with zeor-dimensional tensor and zero-sized tensors.
+PRIMARY_FLOAT_DTYPES = [torch.float16, torch.float32]
+FLOAT_DTYPES = (
+    PRIMARY_FLOAT_DTYPES + [torch.bfloat16]
+    if bf16_is_supported
+    else PRIMARY_FLOAT_DTYPES
+)
+ALL_FLOAT_DTYPES = FLOAT_DTYPES + [torch.float64] if fp64_is_supported else FLOAT_DTYPES
 INT_DTYPES = [torch.int16, torch.int32]
-ALL_INT_DTYPES = INT_DTYPES + [torch.int64]
+ALL_INT_DTYPES = INT_DTYPES + [torch.int64] if int64_is_supported else INT_DTYPES
 BOOL_TYPES = [torch.bool]
+COMPLEX_DTYPES = [torch.complex32, torch.complex64]
 
 SCALARS = [0.001, -0.999, 100.001, -111.999]
 STACK_DIM_LIST = [-2, -1, 0, 1]
@@ -129,7 +178,10 @@ def to_reference(inp, upcast=False):
     if TO_CPU:
         ref_inp = ref_inp.to("cpu")
     if upcast:
-        ref_inp = ref_inp.to(torch.float64)
+        if ref_inp.is_complex():
+            ref_inp = ref_inp.to(torch.complex128)
+        else:
+            ref_inp = ref_inp.to(torch.float64)
     return ref_inp
 
 
@@ -140,11 +192,15 @@ def to_cpu(res, ref):
     return res
 
 
-def gems_assert_close(res, ref, dtype, equal_nan=False, reduce_dim=1):
+def gems_assert_close(res, ref, dtype, equal_nan=False, reduce_dim=1, atol=1e-4, rtol=None):
     res = to_cpu(res, ref)
-    flag_gems.testing.assert_close(
-        res, ref, dtype, equal_nan=equal_nan, reduce_dim=reduce_dim
-    )
+    ref = ref.to(dtype)
+    if rtol is not None:
+        torch.testing.assert_close(res, ref, atol=atol * reduce_dim, rtol=rtol, equal_nan=equal_nan)
+    else:
+        flag_gems.testing.assert_close(
+            res, ref, dtype, equal_nan=equal_nan, reduce_dim=reduce_dim, atol=atol
+        )
 
 
 def gems_assert_equal(res, ref, equal_nan=False):
@@ -162,3 +218,11 @@ def unsqueeze_tensor(inp, max_ndim):
     for _ in range(inp.ndim, max_ndim):
         inp = inp.unsqueeze(-1)
     return inp
+
+
+def init_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

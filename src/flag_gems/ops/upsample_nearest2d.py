@@ -10,17 +10,13 @@ from ..runtime import device, torch_device_fn
 from ..utils import triton_lang_extension as tle
 
 device = device.name
+logger = logging.getLogger(__name__)
 
 
 @triton.autotune(
-    configs=runtime.get_triton_config("upsample_nearest2d"), key=["N", "C", "OH", "OW"]
+    configs=runtime.get_tuned_config("upsample_nearest2d"), key=["N", "C", "OH", "OW"]
 )
-@triton.heuristics(
-    {
-        "SAME_H": lambda args: args["OH"] == args["IH"],
-        "SAME_W": lambda args: args["OW"] == args["IW"],
-    }
-)
+@triton.heuristics(runtime.get_heuristic_config("upsample_nearest2d"))
 @triton.jit
 def upsample_nearest2d_kernel(
     ptr_o,
@@ -64,7 +60,7 @@ def upsample_nearest2d(
     scales_h: Optional[float] = None,
     scales_w: Optional[float] = None,
 ) -> torch.Tensor:
-    logging.debug("GEMS UPSAMPLE NEAREST2D")
+    logger.debug("GEMS UPSAMPLE NEAREST2D")
     assert input.device.type == device
     assert input.ndim == 4, "The ndim of input must be 4"
     assert len(output_size) == 2, "The len of output_size must be 2"
