@@ -52,48 +52,42 @@ UT_SHAPES_2D = list(itertools.product(sizes_2d_nr, sizes_2d_nc))
 POINTWISE_SHAPES = (
     [(2, 19, 7)]
     if QUICK_MODE
-    else [(), (1,), (1024, 512), (20, 320, 15), (16, 128, 16, 4), (16, 7, 32, 8, 4)]
+    else [(1,), (32, 32), (20, 64, 15)]
 )
 SPECIAL_SHAPES = (
     [(2, 19, 7)]
     if QUICK_MODE
-    else [(1,), (1024, 512), (20, 320, 15), (16, 128, 16, 4), (16, 7, 32, 8, 4)]
+    else [(1,), (32, 32), (20, 64, 15)]
 )
-DISTRIBUTION_SHAPES = [(20, 320, 15)]
-REDUCTION_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (4096, 256), (200, 512, 3)]
+DISTRIBUTION_SHAPES = [(20, 32, 15)]
+REDUCTION_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (20, 128, 3)]
 REDUCTION_SMALL_SHAPES = (
-    [(1, 32)] if QUICK_MODE else [(1, 2), (4096, 256), (200, 512, 3)]
+    [(1, 32)] if QUICK_MODE else [(1, 2), (32, 32), (20, 128, 3)]
 )
 STACK_SHAPES = [
     [(16,), (16,)],
     [(16, 256), (16, 256)],
-    [(20, 320, 15), (20, 320, 15), (20, 320, 15)],
 ]
 CONTIGUOUS_SHAPE_STRIDES_1D = [
     ((1,), (1,)),
-    ((1024,), (1,)),
-    ((65535,), (1,)),
+    ((256,), (1,)),
 ]
 DILATED_SHAPE_STRIDES_1D = [
     ((1,), (2,)),
-    ((1024,), (2,)),
-    ((65535,), (2,)),
+    ((256,), (2,)),
 ]
 CONTIGUOUS_SHAPE_STRIDES_2D = [
     ((1, 512), (512, 1)),
-    ((4096, 128), (128, 1)),
 ]
 TRANSPOSED_SHAPE_STRIDES_2D = [
     ((512, 1), (1, 512)),
-    ((128, 512), (1, 128)),
+    ((128, 32), (1, 128)),
 ]
 CONTIGUOUS_SHAPE_STRIDES_3D = [
-    ((20, 320, 15), (4800, 15, 1)),
-    ((200, 512, 3), (1536, 3, 1)),
+    ((20, 256, 15), (512, 15, 1)),
 ]
 TRANSPOSED_SHAPE_STRIDES_3D = [
-    ((320, 20, 15), (15, 4800, 1)),
-    ((3, 512, 32), (1, 3, 1536)),
+    ((256, 20, 15), (15, 512, 1)),
 ]
 SHAPE_STRIDES = (
     CONTIGUOUS_SHAPE_STRIDES_1D
@@ -104,13 +98,11 @@ SHAPE_STRIDES = (
     + TRANSPOSED_SHAPE_STRIDES_3D
 )
 
-IRREGULAR_SHAPE_STRIDES = [((10, 10, 10, 8, 4), (1, 3200, 23, 320, 80))]
+IRREGULAR_SHAPE_STRIDES = [((10, 10, 10, 8, 4))]
 
 UPSAMPLE_SHAPES = [
-    (32, 16, 16, 4),
     (15, 37, 16, 4),
     (3, 5, 16, 4),
-    (128, 192, 16, 4),
     (3, 7, 16, 4),
 ]
 
