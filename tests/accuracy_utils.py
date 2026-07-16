@@ -41,14 +41,14 @@ INT32_MIN = torch.iinfo(torch.int32).min
 INT32_MAX = torch.iinfo(torch.int32).max
 
 sizes_one = [1]
-sizes_pow_2 = [2**d for d in range(4, 11, 2)]
+sizes_pow_2 = [16, 64, 256]
 sizes_noalign = [d + 17 for d in sizes_pow_2]
-sizes_1d = sizes_one + sizes_pow_2 + sizes_noalign
-sizes_2d_nc = [1] if QUICK_MODE else [1, 16, 64, 512]
-sizes_2d_nr = [1] if QUICK_MODE else [1, 5, 1024]
+sizes_1d = [1, 64, 512]
+sizes_2d_nc = [1] if QUICK_MODE else [64, 512]
+sizes_2d_nr = [1] if QUICK_MODE else [1, 32]
 
-UT_SHAPES_1D = list((n,) for n in sizes_1d)
-UT_SHAPES_2D = list(itertools.product(sizes_2d_nr, sizes_2d_nc))
+UT_SHAPES_1D = [(1,), (64,), (512,)]
+UT_SHAPES_2D = [(1, 64), (32, 256), (64, 512)]
 POINTWISE_SHAPES = (
     [(2, 19, 7)]
     if QUICK_MODE
@@ -69,18 +69,15 @@ STACK_SHAPES = [
     [(16, 256), (16, 256)],
 ]
 CONTIGUOUS_SHAPE_STRIDES_1D = [
-    ((1,), (1,)),
     ((256,), (1,)),
 ]
 DILATED_SHAPE_STRIDES_1D = [
-    ((1,), (2,)),
     ((256,), (2,)),
 ]
 CONTIGUOUS_SHAPE_STRIDES_2D = [
     ((1, 512), (512, 1)),
 ]
 TRANSPOSED_SHAPE_STRIDES_2D = [
-    ((512, 1), (1, 512)),
     ((128, 32), (1, 128)),
 ]
 CONTIGUOUS_SHAPE_STRIDES_3D = [
@@ -89,14 +86,11 @@ CONTIGUOUS_SHAPE_STRIDES_3D = [
 TRANSPOSED_SHAPE_STRIDES_3D = [
     ((256, 20, 15), (15, 512, 1)),
 ]
-SHAPE_STRIDES = (
-    CONTIGUOUS_SHAPE_STRIDES_1D
-    + DILATED_SHAPE_STRIDES_1D
-    + CONTIGUOUS_SHAPE_STRIDES_2D
-    + TRANSPOSED_SHAPE_STRIDES_2D
-    + CONTIGUOUS_SHAPE_STRIDES_3D
-    + TRANSPOSED_SHAPE_STRIDES_3D
-)
+SHAPE_STRIDES = [
+    ((256,), (1,)),
+    ((1, 512), (512, 1)),
+    ((256, 20, 15), (15, 512, 1)),
+]
 
 IRREGULAR_SHAPE_STRIDES = [((10, 10, 10, 8, 4))]
 

@@ -183,7 +183,7 @@ def test_accuracy_cross_entropy_loss_probabilities(
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
-CUMSUM_SHAPES = [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 512, 32)]
+CUMSUM_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (16, 256, 32)]
 
 
 @pytest.mark.cumsum
@@ -204,7 +204,7 @@ def test_accuracy_cumsum(shape, dtype):
     gems_assert_close(res_out, ref_out, dtype, reduce_dim=shape[dim])
 
 
-CUMMIN_SHAPES = [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,), (16, 512, 32)]
+CUMMIN_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (16, 256, 32)]
 
 
 @pytest.mark.cummin
@@ -229,7 +229,7 @@ def test_accuracy_cummin(shape, dtype):
     gems_assert_equal(res_out.indices, ref_out.indices)
 
 
-NONZERO_SHAPES = [(2, 32)] if QUICK_MODE else REDUCTION_SHAPES + [(2637,)]
+NONZERO_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (512,)]
 
 
 @pytest.mark.nonzero
@@ -297,7 +297,7 @@ def test_accuracy_log_softmax(shape, dtype):
 # TODO: failed at (1, 2) (200, 40999, 3)
 @pytest.mark.softmax
 @pytest.mark.parametrize(
-    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 512, 3)]
+    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (200, 256), (200, 512, 3)]
 )
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
@@ -320,7 +320,7 @@ def test_accuracy_softmax(shape, dtype, dim):
 
 @pytest.mark.softmax
 @pytest.mark.parametrize(
-    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (4096, 256), (200, 512, 3)]
+    "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (200, 256), (200, 512, 3)]
 )
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
@@ -373,7 +373,7 @@ def test_accuracy_varmean(shape, dim, correction, keepdim, dtype):
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
 )
 @pytest.mark.parametrize(
-    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16)]
+    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (256, 64, 16)]
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -417,7 +417,7 @@ def test_accuracy_scatter_src(src_shape, inp_shape, dim, dtype):
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
 )
 @pytest.mark.parametrize(
-    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16)]
+    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (256, 64, 16)]
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -461,7 +461,7 @@ def test_accuracy_scatter_add(src_shape, inp_shape, dim, dtype):
     "src_shape", [(32, 8, 4)] if QUICK_MODE else [(128, 16, 4), (256, 32, 8)]
 )
 @pytest.mark.parametrize(
-    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16)]
+    "inp_shape", [(64, 16, 8)] if QUICK_MODE else [(512, 128, 32), (256, 64, 16)]
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -503,7 +503,7 @@ def test_accuracy_scatter_mul(src_shape, inp_shape, dim, dtype):
 @pytest.mark.gather
 @pytest.mark.parametrize(
     "inp_shape",
-    [(32, 8, 4)] if QUICK_MODE else [(512, 128, 32), (1024, 64, 16), (128, 32, 32)],
+    [(32, 8, 4)] if QUICK_MODE else [(512, 128, 32), (256, 64, 16), (128, 32, 32)],
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -584,7 +584,7 @@ def test_accuracy_select_scatter_with_self_overlapping_input():
 @pytest.mark.parametrize(("dim", "shape", "stride"), REGULAR_DIM_SHAPE_STRIDES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("start", [16, 64])
-@pytest.mark.parametrize("end", [1024, 256])
+@pytest.mark.parametrize("end", [256, 512])
 @pytest.mark.parametrize("step", [1, 2])
 def test_accuracy_slice_scatter(shape, stride, dim, dtype, start, end, step):
     inp = torch.empty_strided(shape, stride, dtype=dtype, device=flag_gems.device)

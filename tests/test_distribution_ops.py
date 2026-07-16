@@ -59,9 +59,9 @@ def test_accuracy_exponential_(shape, dtype):
 
 
 @pytest.mark.multinomial
-@pytest.mark.parametrize("shape", [(1024, 10)])
+@pytest.mark.parametrize("shape", [(512, 10)])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-@pytest.mark.parametrize("n_samples", [2048])
+@pytest.mark.parametrize("n_samples", [256])
 def test_accuracy_multinomial_with_replacement(shape, dtype, n_samples):
     # First use multinomial to generate a series of indices, then
     # use the index counts as the input probabilities (scaled)

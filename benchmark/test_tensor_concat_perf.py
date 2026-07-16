@@ -26,7 +26,7 @@ class ConcatBenchmark(Benchmark):
             yield from self.input_fn(shape, cur_dtype, self.device)
 
     def set_more_shapes(self):
-        more_shapes_2d = [(1024, 2), (1024, 32), (1024, 512)]
+        more_shapes_2d = [(512, 2), (512, 32), (512, 512)]
         more_shapes_3d = [(64, 64, 1), (64, 64, 16), (64, 64, 32)]
         return more_shapes_2d + more_shapes_3d
 

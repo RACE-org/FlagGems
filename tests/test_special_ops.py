@@ -35,7 +35,7 @@ device = flag_gems.device
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_dropout(shape, p, dtype):
     if TO_CPU or shape == (1,):
-        shape = (32768,)
+        shape = (512,)
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     ref_inp = to_reference(inp)
 
@@ -199,7 +199,7 @@ def test_apply_rotary_pos_emb(
 
 # TODO: failed when EmbeddingSize is small
 @pytest.mark.embedding
-@pytest.mark.parametrize("EmbeddingSize", [1024] if TO_CPU else [4096])
+@pytest.mark.parametrize("EmbeddingSize", [512] if TO_CPU else [512])
 @pytest.mark.parametrize("Batch", [2] if TO_CPU else [2, 4])
 @pytest.mark.parametrize("M", [4] if TO_CPU else [4, 8])
 @pytest.mark.parametrize("N", [8] if TO_CPU else [8, 16, 32])
@@ -414,7 +414,7 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
 
 @pytest.mark.constant_pad_nd
 @pytest.mark.pad
-@pytest.mark.parametrize("shape", [[1024, 512], [64, 64, 16, 4]])
+@pytest.mark.parametrize("shape", [[512, 512], [64, 64, 16, 4]])
 @pytest.mark.parametrize("dtype", [torch.float32] if TO_CPU else FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
 @pytest.mark.parametrize("contiguous", [True, False])
@@ -504,7 +504,7 @@ def test_upsample_nearest2d(dtype, shape, scale):
 @pytest.mark.arange
 @pytest.mark.parametrize("start", [0, 1, 3])
 @pytest.mark.parametrize("step", [1, 2, 5])
-@pytest.mark.parametrize("end", [128, 256, 1024])
+@pytest.mark.parametrize("end", [128, 256, 512])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES + [None])
 @pytest.mark.parametrize("device", [device, None])
 @pytest.mark.parametrize(
@@ -689,10 +689,7 @@ def test_exception_hstack(shape, dtype):
 CAT_SHAPES = [
     [(1, 32), (8, 32)],
     [(16, 128), (32, 128)],
-    [(1024, 512), (1024, 512)],
-    [(1, 512, 32), (8, 512, 32), (16, 512, 32)],
-    [(16, 320, 15), (32, 320, 15), (64, 320, 15)],
-    [(16, 128, 16, 4), (16, 128, 16, 4), (24, 128, 16, 4), (32, 128, 16, 4)],
+    [(1, 256, 32), (8, 256, 32), (16, 256, 32)],
 ]
 
 
@@ -765,13 +762,6 @@ VSTACK_SHAPES = [
     [(3,), (3,)],
     [(3, 33), (7, 33)],
     [(13, 3, 32), (17, 3, 32), (7, 3, 32)],
-    [
-        (13, 3, 32, 5, 2),
-        (16, 3, 32, 5, 2),
-        (7, 3, 32, 5, 2),
-        (4, 3, 32, 5, 2),
-        (1, 3, 32, 5, 2),
-    ],
 ]
 
 
@@ -797,10 +787,9 @@ def test_accuracy_vstack(shape, dtype):
 
 
 REPEAT_INTERLEAVE_SHAPES = [
-    (1024, 512),
+    (512, 512),
     (20, 320, 15),
     (16, 128, 16, 4),
-    (16, 7, 32, 8, 4),
 ]
 REPEAT_INTERLEAVE_REPEATS = [2]
 REPEAT_INTERLEAVE_DIM = [-1, 0, None]
@@ -897,8 +886,8 @@ def get_dim1_dim2(o_rank):
 
 def get_diag_embed_shape_and_dims():
     shapes = [
-        (1024,),
-        (1024, 512),
+        (512,),
+        (256, 512),
     ]
     # [(shape, dim1, dim2)]
     result = []

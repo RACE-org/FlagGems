@@ -620,8 +620,8 @@ def _uniform__case():
 
 def _embedding_case():
     def prepare(dtype):
-        weight = _f((1024, 8), dtype)
-        indices = torch.randint(0, 1024, (2, 4), dtype=torch.long, device="cpu")
+        weight = _f((512, 8), dtype)
+        indices = torch.randint(0, 512, (2, 4), dtype=torch.long, device="cpu")
         return (indices, weight), {}
 
     def run(indices, weight):

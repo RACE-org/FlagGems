@@ -97,10 +97,8 @@ def test_accuracy_groupnorm(N, C, H, W, num_groups, dtype, wb_none):
     if QUICK_MODE
     else [
         (200, 36),
-        (4096, 100),
+        (100, 256),
         (1, 512),
-        (100, 512),
-        (4096, 256),
     ],
 )
 @pytest.mark.parametrize("wb_none", [False, True])

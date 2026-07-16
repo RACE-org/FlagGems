@@ -15,7 +15,7 @@ class BinaryPointwiseBenchmark(Benchmark):
     DEFAULT_METRICS = DEFAULT_METRICS[:] + ["tflops"]
 
     def set_more_shapes(self):
-        special_shapes_2d = [(1024, 1), (1024, 16), (1024, 256), (1024, 512)]
+        special_shapes_2d = [(512, 1), (512, 16), (512, 256), (512, 512)]
         shapes_3d = [(64, 64, 1), (64, 64, 16), (64, 64, 32)]
         return special_shapes_2d + shapes_3d
 
