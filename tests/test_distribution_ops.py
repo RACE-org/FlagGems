@@ -11,6 +11,7 @@ device = flag_gems.device
 
 
 @pytest.mark.normal
+@pytest.mark.normal_tensor_tensor
 @pytest.mark.parametrize("float", ["none", "mean", "std"])
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)

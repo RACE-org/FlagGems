@@ -100,6 +100,7 @@ def test_accuracy_add_scalar_scalar(dtype):
 
 
 @pytest.mark.bitwise_and
+@pytest.mark.bitwise_and_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES + BOOL_TYPES)
 def test_accuracy_bitwiseand(shape, dtype):
@@ -167,6 +168,7 @@ def test_accuracy_bitwiseand_scalar_tensor(shape, dtype):
 
 @pytest.mark.or_
 @pytest.mark.bitwise_or
+@pytest.mark.bitwise_or_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES + BOOL_TYPES)
 def test_accuracy_bitwiseor(shape, dtype):
@@ -258,6 +260,7 @@ def test_accuracy_clamp(shape, maxi, mini, isnone, dtype):
 
 
 @pytest.mark.clamp
+@pytest.mark.clamp_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("isnone", [None, "max", "min"])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -280,6 +283,7 @@ def test_accuracy_clamp_tensor(shape, isnone, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
+@pytest.mark.true_divide
 @pytest.mark.div
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -296,6 +300,7 @@ def test_accuracy_div_tensor_tensor(shape, dtype):
     gems_assert_close(res_out, ref_out, dtype, equal_nan=True)
 
 
+@pytest.mark.true_divide
 @pytest.mark.div
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
@@ -312,6 +317,7 @@ def test_accuracy_div_tensor_scalar(shape, scalar, dtype):
     gems_assert_close(res_out, ref_out, dtype, equal_nan=True)
 
 
+@pytest.mark.true_divide
 @pytest.mark.div
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
@@ -328,6 +334,7 @@ def test_accuracy_div_scalar_tensor(shape, scalar, dtype):
     gems_assert_close(res_out, ref_out, dtype, equal_nan=True)
 
 
+@pytest.mark.true_divide
 @pytest.mark.div
 @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
 def test_accuracy_div_scalar_scalar(dtype):
@@ -788,6 +795,7 @@ def test_accuracy_ne_scalar(shape, dtype):
 
 
 @pytest.mark.pow
+@pytest.mark.pow_tensor_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_pow(shape, dtype):
@@ -1021,6 +1029,7 @@ def test_accuracy_where_self_out(shape, dtype):
 
 
 @pytest.mark.where
+@pytest.mark.where_self
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_where_self(shape, dtype):
