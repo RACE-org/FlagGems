@@ -564,6 +564,7 @@ def test_accuracy_isin(shape, dtype, assume_unique, invert):
 
 
 @pytest.mark.fill
+@pytest.mark.fill_scalar
 @pytest.mark.parametrize("value", [0, 1, 9])
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -784,6 +785,7 @@ REPEAT_INTERLEAVE_DIM = [-1, 0, None]
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_int
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES + [(1,)])
 @pytest.mark.parametrize("dim", REPEAT_INTERLEAVE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -799,6 +801,7 @@ def test_accuracy_repeat_interleave_self_int(shape, dim, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_int
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES)
 @pytest.mark.parametrize("dim", REPEAT_INTERLEAVE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -814,6 +817,7 @@ def test_accuracy_repeat_interleave_self_int_non_contiguous(shape, dim, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_tensor
 @pytest.mark.parametrize("shape", UT_SHAPES_1D)
 @pytest.mark.parametrize("dtype", [torch.int32])
 def test_accuracy_repeat_interleave_tensor(shape, dtype):

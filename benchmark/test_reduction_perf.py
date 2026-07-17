@@ -49,15 +49,22 @@ class UnaryReductionBenchmark(Benchmark):
 
 forward_operations = [
     ("all", torch.all, FLOAT_DTYPES),
+    ("all_dim", torch.all, FLOAT_DTYPES),
     ("amax", torch.amax, FLOAT_DTYPES),
     ("any", torch.any, FLOAT_DTYPES),
+    ("any_dim", torch.any, FLOAT_DTYPES),
     ("argmax", torch.argmax, FLOAT_DTYPES),
     ("max", torch.max, FLOAT_DTYPES),
+    ("max_dim", torch.max, FLOAT_DTYPES),
     ("mean", torch.mean, FLOAT_DTYPES),
+    ("mean_dim", torch.mean, FLOAT_DTYPES),
     ("min", torch.min, FLOAT_DTYPES),
+    ("min_dim", torch.min, FLOAT_DTYPES),
     ("prod", torch.prod, FLOAT_DTYPES),
+    ("prod_dim", torch.prod, FLOAT_DTYPES),
     ("softmax", torch.nn.functional.softmax, FLOAT_DTYPES),
     ("sum", torch.sum, FLOAT_DTYPES),
+    ("sum_dim", torch.sum, FLOAT_DTYPES),
     ("var_mean", torch.var_mean, FLOAT_DTYPES),
 ]
 
