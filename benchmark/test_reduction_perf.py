@@ -149,6 +149,13 @@ def cumsum_input_fn(shape, cur_dtype, device):
             marks=pytest.mark.CrossEntropyLoss,
         ),
         pytest.param(
+            "cross_entropy_loss",
+            torch.nn.functional.cross_entropy,
+            cross_entropy_loss_input_fn,
+            FLOAT_DTYPES,
+            marks=pytest.mark.cross_entropy_loss,
+        ),
+        pytest.param(
             "cumsum",
             torch.cumsum,
             cumsum_input_fn,

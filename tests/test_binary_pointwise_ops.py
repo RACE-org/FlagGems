@@ -27,6 +27,7 @@ def replace_zeros(inp):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("alpha", SCALARS)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -44,6 +45,7 @@ def test_accuracy_add(shape, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("alpha", SCALARS)
@@ -61,6 +63,7 @@ def test_accuracy_add_tensor_scalar(shape, scalar, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("alpha", SCALARS)
@@ -78,6 +81,7 @@ def test_accuracy_add_scalar_tensor(shape, scalar, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
 def test_accuracy_add_scalar_scalar(dtype):
     if dtype == torch.float32:

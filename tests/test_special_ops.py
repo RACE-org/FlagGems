@@ -516,7 +516,7 @@ def test_arange(start, step, end, dtype, device, pin_memory):
             start, end, step, dtype=dtype, device=device, pin_memory=pin_memory
         )
 
-    gems_assert_equal(res_out, ref_out)
+    gems_assert_equal(res_out.to("cpu"), ref_out)
 
 
 @pytest.mark.isin
@@ -831,6 +831,7 @@ def test_accuracy_repeat_interleave_tensor(shape, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_tensor
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES)
 @pytest.mark.parametrize("dim", [-1, 0, 1])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
