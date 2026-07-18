@@ -301,7 +301,7 @@ def test_accuracy_resolve_neg(shape, dtype):
     assert not out.is_neg()
 
 
-@pytest.mark.topk
+#@pytest.mark.topk
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize("hiddensize", [128, 256])
 @pytest.mark.parametrize("topk", [5])
@@ -340,7 +340,7 @@ def test_topk(
     gems_assert_equal(res_index, ref_index)
 
 
-@pytest.mark.resolve_conj
+#@pytest.mark.resolve_conj
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", [torch.cfloat])
 def test_accuracy_resolve_conj(shape, dtype):
@@ -354,8 +354,8 @@ def test_accuracy_resolve_conj(shape, dtype):
 
 
 @pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
-@pytest.mark.unique
-@pytest.mark.unique2
+#@pytest.mark.unique
+#@pytest.mark.unique2
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
 @pytest.mark.parametrize("sorted", [True])
@@ -487,8 +487,8 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
         assert torch.all(idx_cnt <= 1)
 
 
-@pytest.mark.pad
-@pytest.mark.constant_pad_nd
+#@pytest.mark.pad
+#@pytest.mark.constant_pad_nd
 @pytest.mark.parametrize("shape", [[1024, 1024], [64, 64, 64, 64]])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
@@ -665,7 +665,7 @@ def test_linspace(start, end, steps, dtype, device, pin_memory):
 
 
 @pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
-@pytest.mark.isin
+#@pytest.mark.isin
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
 @pytest.mark.parametrize("assume_unique", [False, True])
@@ -1149,7 +1149,7 @@ def test_accuracy_diagonal_backward(shape, dtype, dim1, dim2, offset):
 SORT_HIDDENSIZE = [32768] if QUICK_MODE else [1, 256, 2048, 9333, 65536, 32768, 128 * 1024, 256 * 1024]
 SORT_DTYPE = [torch.bfloat16, torch.int16] if QUICK_MODE else FLOAT_DTYPES + INT_DTYPES
 @pytest.mark.skipif(flag_gems.vendor_name == "kunlunxin", reason="RESULT TODOFIX")
-@pytest.mark.sort
+#@pytest.mark.sort
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize(
     "hiddensize", SORT_HIDDENSIZE

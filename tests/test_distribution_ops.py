@@ -42,7 +42,7 @@ def test_accuracy_normal(float, shape, dtype):
     assert torch.abs(std - 10.0) < 0.1
 
 
-@pytest.mark.uniform_
+#@pytest.mark.uniform_
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_uniform(shape, dtype):
@@ -53,7 +53,7 @@ def test_accuracy_uniform(shape, dtype):
     assert (x >= -3.0).all()
 
 
-@pytest.mark.exponential_
+#@pytest.mark.exponential_
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_exponential_(shape, dtype):

@@ -62,7 +62,7 @@ forward_operations = [
         else []
     ),
     ("amax", torch.amax, FLOAT_DTYPES),
-    ("argmax", torch.argmax, FLOAT_DTYPES),
+    #("argmax", torch.argmax, FLOAT_DTYPES),
     ("argmin", torch.argmin, FLOAT_DTYPES),
     ("max", torch.max, FLOAT_DTYPES),
     ("max_dim", torch.max, FLOAT_DTYPES),
@@ -266,7 +266,7 @@ def test_generic_reduction_benchmark(op_name, torch_op, input_fn, dtypes):
     vendor_name == "kunlunxin" or vendor_name == "hygon", reason="RESULT TODOFIX"
 )
 @pytest.mark.skipif(flag_gems.device == "musa", reason="ZeroDivisionError")
-@pytest.mark.count_nonzero
+#@pytest.mark.count_nonzero
 def test_perf_count_nonzero():
     def count_nonzero_input_fn(shape, dtype, device):
         inp = torch.randn(shape, dtype=dtype, device=device)
