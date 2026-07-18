@@ -716,7 +716,7 @@ SHAPE_CONV1D = [
 
 
 @pytest.mark.skip("conv1d introduces failures, disable it temporarily")
-@pytest.mark.conv1d
+#pytest.mark.conv1d
 @pytest.mark.parametrize("shape, kernel", SHAPE_CONV1D)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [1])
@@ -825,7 +825,7 @@ SHAPE_DEPTHWISE = [
 
 # test for depthwise depends on  cuda
 @pytest.mark.skip("conv_depthwise2d introduces failures, disable it temporarily")
-@pytest.mark.conv_depthwise2d
+#@pytest.mark.conv_depthwise2d
 @pytest.mark.parametrize("shape_input, shape_weight,kernel ", SHAPE_DEPTHWISE)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [2])

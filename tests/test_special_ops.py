@@ -138,7 +138,7 @@ def torch_apply_rotary_pos_emb(
     return q_embed, k_embed
 
 
-@pytest.mark.apply_rotary_pos_emb
+#@pytest.mark.apply_rotary_pos_emb
 @pytest.mark.parametrize("batch_size", [2] if TO_CPU else [4, 8])
 @pytest.mark.parametrize("max_seq_len", [16] if TO_CPU else [512, 2048])
 @pytest.mark.parametrize("q_heads,k_heads", [(8, 1), (6, 2), (1, 1), (8, 8)])
@@ -755,7 +755,7 @@ VSTACK_SHAPES = [
 ]
 
 
-@pytest.mark.vstack
+#@pytest.mark.vstack
 @pytest.mark.parametrize("shape", VSTACK_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES)
 def test_accuracy_vstack(shape, dtype):

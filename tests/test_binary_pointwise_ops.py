@@ -587,7 +587,7 @@ def test_accuracy_ge_scalar(shape, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.gelu_and_mul
+#@pytest.mark.gelu_and_mul
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("approximate", ["none", "tanh"])
@@ -896,7 +896,7 @@ def test_accuracy_rsub(shape, alpha, dtype):
     gems_assert_close(res_out, ref_out, dtype)
 
 
-@pytest.mark.silu_and_mul
+#@pytest.mark.silu_and_mul
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_silu_and_mul(shape, dtype):

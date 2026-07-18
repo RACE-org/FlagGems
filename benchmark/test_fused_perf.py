@@ -11,7 +11,7 @@ from .performance_utils import (
 )
 
 
-@pytest.mark.gelu_and_mul
+#@pytest.mark.gelu_and_mul
 def test_perf_gelu_and_mul():
     def torch_op(x, y):
         return torch.mul(torch.nn.functional.gelu(x), y)
@@ -27,7 +27,7 @@ def test_perf_gelu_and_mul():
     bench.run()
 
 
-@pytest.mark.silu_and_mul
+#@pytest.mark.silu_and_mul
 def test_perf_silu_and_mul():
     def torch_op(x, y):
         return torch.mul(torch.nn.functional.silu(x), y)
