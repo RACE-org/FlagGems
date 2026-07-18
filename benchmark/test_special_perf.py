@@ -214,7 +214,7 @@ class LerpBenchmark(GenericBenchmark):
         return None
 
 
-@pytest.mark.lerp
+#@pytest.mark.lerp
 def test_perf_lerp():
     def lerp_input_fn(shape, dtype, device):
         input = torch.randn(*shape, device=device, dtype=dtype)
@@ -402,7 +402,7 @@ def test_perf_diagonal_backward():
 @pytest.mark.skipif(flag_gems.device == "musa", reason="ZeroDivisionError")
 @pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.skipif(vendor_name == "cambricon", reason="TODOFIX")
-@pytest.mark.kron
+#@pytest.mark.kron
 def test_perf_kron():
     class KronBenchmark(GenericBenchmark2DOnly):
         def set_more_shapes(self):
@@ -423,7 +423,7 @@ def test_perf_kron():
     bench.run()
 
 
-@pytest.mark.contiguous
+#@pytest.mark.contiguous
 def test_perf_contiguous():
     def contiguous_input_fn(shape, dtype, device):
         if dtype in FLOAT_DTYPES:

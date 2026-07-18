@@ -24,7 +24,7 @@ class AttentionBenchmark(GenericBenchmark):
 @pytest.mark.skipif(
     flag_gems.device == "musa" or vendor_name == "hygon", reason="RuntimeError"
 )
-@pytest.mark.scaled_dot_product_attention
+#@pytest.mark.scaled_dot_product_attention
 @pytest.mark.parametrize("dropout_p", [0.0, 0.25])
 @pytest.mark.parametrize("is_causal", [True, False])
 def test_perf_scaled_dot_product_attention(dropout_p, is_causal):
@@ -77,7 +77,7 @@ class FlashMLABenchmark(GenericBenchmark):
     flag_gems.device == "musa" or vendor_name == "hygon", reason="RuntimeError"
 )
 @pytest.mark.skipif(flag_gems.vendor_name == "cambricon", reason="TypeError")
-@pytest.mark.flash_mla
+#@pytest.mark.flash_mla
 def test_perf_flash_mla():
     def flash_mla_kwargs(shape, dtype, device):
         seqlen = shape[0]

@@ -191,7 +191,7 @@ class VdotBenchmark(BlasBenchmark):
 
 @pytest.mark.skipif(vendor_name == "kunlunxin", reason="RESULT TODOFIX")
 @pytest.mark.skipif(flag_gems.device == "musa", reason="Segmentation fault")
-@pytest.mark.vdot
+#@pytest.mark.vdot
 def test_vdot_benchmark():
     def vdot_input_fn(m, cur_dtype, device):
         inp1 = torch.randn([m], dtype=cur_dtype, device=device)

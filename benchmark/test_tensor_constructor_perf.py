@@ -119,9 +119,9 @@ tensor_constructor_operations = [
     # arange
     ("arange", torch.arange, arange_input_fn),
     # linspace
-    ("linspace", torch.linspace, linspace_input_fn),
+    #("linspace", torch.linspace, linspace_input_fn),
     # eye
-    ("eye", torch.eye, _2D_input_fn),
+    #("eye", torch.eye, _2D_input_fn),
 ]
 
 

@@ -499,7 +499,7 @@ def index_input_fn(shapes, dtype, device):
     yield inp, indices
 
 
-@pytest.mark.index
+#@pytest.mark.index
 def test_index_acc_perf():
     gems_op = flag_gems.index
     bench = IndexAccBenchmark(

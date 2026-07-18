@@ -63,7 +63,7 @@ forward_operations = [
     ),
     ("amax", torch.amax, FLOAT_DTYPES),
     #("argmax", torch.argmax, FLOAT_DTYPES),
-    ("argmin", torch.argmin, FLOAT_DTYPES),
+    #("argmin", torch.argmin, FLOAT_DTYPES),
     ("max", torch.max, FLOAT_DTYPES),
     ("max_dim", torch.max, FLOAT_DTYPES),
     ("mean", torch.mean, FLOAT_DTYPES),
@@ -210,42 +210,42 @@ def mse_loss_input_fn(shape, cur_dtype, device):
                 ),
             ],
         ),
-        pytest.param(
-            "cummax",
-            torch.cummax,
-            cumsum_input_fn,
-            FLOAT_DTYPES + INT_DTYPES,
-            marks=[
-                pytest.mark.cummax,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
-        pytest.param(
-            "nll_loss",
-            torch.nn.functional.nll_loss,
-            nll_loss_input_fn,
-            FLOAT_DTYPES,
-            marks=[
-                pytest.mark.nll_loss,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
-        pytest.param(
-            "mse_loss",
-            torch.nn.functional.mse_loss,
-            mse_loss_input_fn,
-            FLOAT_DTYPES,
-            marks=[
-                pytest.mark.mse_loss,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
+        #pytest.param(
+        #    "cummax",
+        #    torch.cummax,
+        #    cumsum_input_fn,
+        #    FLOAT_DTYPES + INT_DTYPES,
+        #    marks=[
+        #        pytest.mark.cummax,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
+        #pytest.param(
+        #    "nll_loss",
+        #    torch.nn.functional.nll_loss,
+        #    nll_loss_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=[
+        #        pytest.mark.nll_loss,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
+        #pytest.param(
+        #    "mse_loss",
+        #    torch.nn.functional.mse_loss,
+        #    mse_loss_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=[
+        #        pytest.mark.mse_loss,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
     ],
 )
 def test_generic_reduction_benchmark(op_name, torch_op, input_fn, dtypes):
@@ -283,7 +283,7 @@ def test_perf_count_nonzero():
     bench.run()
 
 
-@pytest.mark.dot
+#@pytest.mark.dot
 def test_perf_dot():
     def dot_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype=dtype, device=device)

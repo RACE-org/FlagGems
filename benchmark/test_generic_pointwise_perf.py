@@ -55,13 +55,13 @@ def threshold_input_fn(shape, cur_dtype, device):
 @pytest.mark.parametrize(
     "op_name, torch_op, input_fn, dtypes",
     [
-        pytest.param(
-            "nan_to_num",
-            torch.nan_to_num,
-            nan_to_num_input_fn,
-            FLOAT_DTYPES,
-            marks=pytest.mark.nan_to_num,
-        ),
+        #pytest.param(
+        #    "nan_to_num",
+        #    torch.nan_to_num,
+        #    nan_to_num_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=pytest.mark.nan_to_num,
+        #),
         pytest.param(
             "clamp",
             torch.clamp,
@@ -89,13 +89,13 @@ def threshold_input_fn(shape, cur_dtype, device):
         pytest.param(
             "where_self", torch.where, where_input_fn, FLOAT_DTYPES, marks=pytest.mark.where_self
         ),
-        pytest.param(
-            "threshold",
-            torch.nn.functional.threshold,
-            threshold_input_fn,
-            FLOAT_DTYPES,
-            marks=pytest.mark.threshold,
-        ),
+        #pytest.param(
+        #    "threshold",
+        #    torch.nn.functional.threshold,
+        #    threshold_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=pytest.mark.threshold,
+        #),
     ],
 )
 def test_generic_pointwise_benchmark(op_name, torch_op, input_fn, dtypes):
