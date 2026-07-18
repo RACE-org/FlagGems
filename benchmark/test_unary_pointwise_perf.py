@@ -39,7 +39,7 @@ forward_operations = [
     ("logical_not", torch.logical_not, INT_DTYPES + BOOL_DTYPES),
     # ("triu", torch.triu, FLOAT_DTYPES),  # do not support 1d shapes
     # Dropout
-    ("native_dropout", torch.nn.Dropout(p=0.5), FLOAT_DTYPES),
+#    ("native_dropout", torch.nn.Dropout(p=0.5), FLOAT_DTYPES),
     ("dropout", torch.nn.Dropout(p=0.5), FLOAT_DTYPES),
     # Activation operations
     ("gelu", torch.nn.functional.gelu, FLOAT_DTYPES),

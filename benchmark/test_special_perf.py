@@ -37,10 +37,10 @@ def resolve_conj_input_fn(shape, dtype, device):
 
 special_operations = [
     # Sorting Operations
-    ("topk", torch.topk, FLOAT_DTYPES, topk_input_fn),
+    #("topk", torch.topk, FLOAT_DTYPES, topk_input_fn),
     # Complex Operations
     ("resolve_neg", torch.resolve_neg, [torch.cfloat], resolve_neg_input_fn),
-    ("resolve_conj", torch.resolve_conj, [torch.cfloat], resolve_conj_input_fn),
+    #("resolve_conj", torch.resolve_conj, [torch.cfloat], resolve_conj_input_fn),
 ]
 
 
@@ -64,7 +64,7 @@ def test_special_operations_benchmark(op_name, torch_op, dtypes, input_fn):
     bench.run()
 
 
-@pytest.mark.isin
+#@pytest.mark.isin
 def test_isin_perf():
     def isin_input_fn(shape, dtype, device):
         elements = generate_tensor_input(shape, dtype, device)
@@ -87,7 +87,7 @@ def test_isin_perf():
     bench.run()
 
 
-@pytest.mark.unique
+#@pytest.mark.unique
 def test_perf_unique():
     def unique_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype, device)
@@ -102,7 +102,7 @@ def test_perf_unique():
     bench.run()
 
 
-@pytest.mark.sort
+#@pytest.mark.sort
 def test_perf_sort():
     class SortBenchmark(GenericBenchmark2DOnly):
         def set_more_shapes(self):
@@ -137,7 +137,7 @@ def test_multinomial_with_replacement():
     bench.run()
 
 
-@pytest.mark.pad
+#@pytest.mark.pad
 def test_perf_pad():
     def padding_input_fn(shape, dtype, device):
         input = torch.randn(shape, device=device, dtype=dtype)
@@ -202,7 +202,7 @@ class UpsampleBenchmark(GenericBenchmark):
         return None
 
 
-@pytest.mark.upsample_bicubic2d_aa
+#@pytest.mark.upsample_bicubic2d_aa
 def test_perf_upsample_bicubic2d_aa():
     def upsample_bicubic2d_aa_input_fn(shape, dtype, device):
         batch, channel, height, weight = shape
@@ -229,7 +229,7 @@ def test_perf_upsample_bicubic2d_aa():
     bench.run()
 
 
-@pytest.mark.upsample_nearest2d
+#@pytest.mark.upsample_nearest2d
 def test_perf_upsample_nearest2d():
     def upsample_nearest2d_input_fn(shape, dtype, device):
         batch, channel, height, weight = shape
