@@ -799,6 +799,7 @@ def test_accuracy_log(shape, dtype):
 
 
 @pytest.mark.to
+@pytest.mark.to_dtype
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", ALL_FLOAT_DTYPES + ALL_INT_DTYPES)
 def test_accuracy_to_dtype(shape, dtype):

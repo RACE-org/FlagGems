@@ -128,10 +128,30 @@ def gather_scatter_gbps(bench_fn_args, latency):
 @pytest.mark.scatter
 def test_perf_scatter():
     def scatter_input_fn(shape, dtype, device):
-        input_gen = gather_input_fn(shape, dtype, device)
-        inp, dim, index = next(input_gen)
-        src_shape = list(size + 16 for size in index.shape)
+        batch, size = shape
+        src_shape = [batch // 16, size // 16]
+        inp = torch.randn(shape, dtype=dtype, device=device)
         src = torch.randn(src_shape, dtype=dtype, device=device)
+
+        dim = random.choice([0, 1])
+        size_dim = min(src_shape[dim], shape[dim])
+
+        index_shape = [
+            random.randint(1, min(src_shape[0], shape[0])),
+            random.randint(1, min(src_shape[1], shape[1])),
+        ]
+        index = torch.empty(tuple(index_shape), dtype=torch.long, device=device)
+
+        m, n = index_shape
+
+        index_size_dim = index_shape[dim]
+        # make unique indices
+        for i in range(1 if dim == 0 else m):
+            for j in range(1 if dim == 1 else n):
+                ii = [i, j]
+                ii[dim] = slice(0, index.size(dim) + 1)
+                index[tuple(ii)] = torch.randperm(size_dim)[0:index_size_dim]
+
         yield inp, dim, index, src
 
     bench = TensorSelectBenchmark(
@@ -187,11 +207,24 @@ def test_perf_scatter_multiply():
 def gather_input_fn(shape, dtype, device):
     inp = torch.randn(shape, dtype=dtype, device=device)
 
-    dim = -1
+    dim = random.choice([0, 1])
     size_dim = shape[dim]
-    index_shape = list(shape)
-    index_shape[dim] = 2 * shape[dim]
-    index = torch.randint(0, size_dim, index_shape, dtype=torch.long, device=device)
+    index_shape = [
+        random.randint(1, shape[0]),
+        random.randint(1, shape[1]),
+    ]
+    index = torch.empty(tuple(index_shape), dtype=torch.long, device=device)
+
+    m, n = index_shape
+
+    index_size_dim = index_shape[dim]
+    # make unique indices
+    for i in range(1 if dim == 0 else m):
+        for j in range(1 if dim == 1 else n):
+            ii = [i, j]
+            ii[dim] = slice(0, index.size(dim) + 1)
+            index[tuple(ii)] = torch.randperm(size_dim)[0:index_size_dim]
+
     yield inp, dim, index
 
 
@@ -214,7 +247,7 @@ def slice_scatter_gbps(bench_fn_args, latency):
     return io_amount * 1e-9 / (latency * 1e-3)
 
 
-@pytest.mark.gather
+@pytest.mark.gather_backward
 def test_perf_gather_backward():
     bench = TensorSelectBenchmark(
         op_name="gather",
@@ -308,7 +341,7 @@ def test_index_add_perf():
         op_name="index_add",
         torch_op=torch.index_add,
         input_fn=index_add_input_fn,
-        dtypes=[torch.float16, torch.float32],
+        dtypes=FLOAT_DTYPES,
         get_gbps=index_add_gbps,
     )
     bench.run()

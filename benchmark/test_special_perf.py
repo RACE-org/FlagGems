@@ -379,6 +379,7 @@ def test_perf_diag_embed():
 
 @pytest.mark.skipif(flag_gems.device == "musa", reason="RuntimeError")
 @pytest.mark.diagonal
+@pytest.mark.diagonal_backward
 def test_perf_diagonal_backward():
     def diagonal_backward_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype, device)

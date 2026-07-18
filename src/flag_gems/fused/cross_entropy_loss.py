@@ -574,7 +574,7 @@ class CrossEntropyLoss(torch.autograd.Function):
                 )
 
         if reduction == 1:  # MEAN
-            out_reduce = torch.empty([], dtype=inp.dtype, device=inp.device)
+            out_reduce = torch.empty([], dtype=torch.float32, device=inp.device)
             if tgt.ndim == dim:
                 sum_and_scale[(1,)](out, out_reduce, N * D, False, scale=N * D)
             else:
@@ -582,11 +582,11 @@ class CrossEntropyLoss(torch.autograd.Function):
                 sum_and_scale[(1,)](
                     out, out_reduce, N * D, True, scale=w_tgt, mean_num=wgt_sum
                 )
-            out = out_reduce
+            out = out_reduce.to(inp.dtype)
         elif reduction == 2:  # SUM
-            out_reduce = torch.empty([], dtype=inp.dtype, device=inp.device)
+            out_reduce = torch.empty([], dtype=torch.float32, device=inp.device)
             sum_and_scale[(1,)](out, out_reduce, N * D, False)
-            out = out_reduce
+            out = out_reduce.to(inp.dtype)
 
         if inp.requires_grad:
             ctx.save_for_backward(inp, tgt, weight)
@@ -626,7 +626,7 @@ class CrossEntropyLoss(torch.autograd.Function):
         out_grad = out_grad_.to(inp.device)
         # out_grad = out_grad.broadcast_to(shape).contiguous()
 
-        inp_grad = torch.zeros(inp.shape, dtype=inp.dtype, device=inp.device)
+        inp_grad = torch.zeros(inp.shape, dtype=torch.float32, device=inp.device)
         grid = lambda meta: (triton.cdiv(D, meta["BLOCK_D"]), N)
         if tgt.ndim == inp.ndim:
             celoss_probability_bwd[grid](

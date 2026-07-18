@@ -355,6 +355,7 @@ def test_accuracy_resolve_conj(shape, dtype):
 
 @pytest.mark.skipif(flag_gems.device == "musa", reason="AssertionError")
 @pytest.mark.unique
+@pytest.mark.unique2
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
 @pytest.mark.parametrize("sorted", [True])
@@ -487,6 +488,7 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
 
 
 @pytest.mark.pad
+@pytest.mark.constant_pad_nd
 @pytest.mark.parametrize("shape", [[1024, 1024], [64, 64, 64, 64]])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
@@ -610,7 +612,7 @@ def test_arange(start, step, end, dtype, device, pin_memory):
             start, end, step, dtype=dtype, device=device, pin_memory=pin_memory
         )
 
-    gems_assert_equal(res_out, ref_out)
+    gems_assert_equal(res_out.to("cpu"), ref_out)
 
 
 @pytest.mark.linspace
@@ -711,6 +713,7 @@ def test_accuracy_isin(shape, dtype, assume_unique, invert):
 
 
 @pytest.mark.fill
+@pytest.mark.fill_scalar
 @pytest.mark.parametrize("value", [0, 1, 9])
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -963,6 +966,7 @@ REPEAT_INTERLEAVE_DIM = [-1, 0, None]
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_int
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES + [(1,)])
 @pytest.mark.parametrize("dim", REPEAT_INTERLEAVE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -978,6 +982,7 @@ def test_accuracy_repeat_interleave_self_int(shape, dim, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_int
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES)
 @pytest.mark.parametrize("dim", REPEAT_INTERLEAVE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -994,6 +999,7 @@ def test_accuracy_repeat_interleave_self_int_non_contiguous(shape, dim, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_tensor
 @pytest.mark.parametrize("shape", UT_SHAPES_1D)
 @pytest.mark.parametrize("dtype", [torch.int32])
 def test_accuracy_repeat_interleave_tensor(shape, dtype):
@@ -1007,6 +1013,7 @@ def test_accuracy_repeat_interleave_tensor(shape, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_tensor
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES)
 @pytest.mark.parametrize("dim", [-1, 0, 1])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -1114,6 +1121,7 @@ def get_diagonal_backward_shape_and_dims():
 
 @pytest.mark.skipif(flag_gems.device == "musa", reason="MUSA error: unknown error")
 @pytest.mark.diagonal
+@pytest.mark.diagonal_backward
 @pytest.mark.parametrize("shape, dim1, dim2", get_diagonal_backward_shape_and_dims())
 @pytest.mark.parametrize("offset", [-1, 0, 1])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)

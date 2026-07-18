@@ -140,6 +140,7 @@ class ToDtypeBenchmark(UnaryPointwiseBenchmark):
 
 
 @pytest.mark.to
+@pytest.mark.to_dtype
 def test_to_dtype_perf():
     bench = ToDtypeBenchmark(
         op_name="to",

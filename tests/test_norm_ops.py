@@ -449,7 +449,7 @@ WEIGHT_NORM_INTERFACE_SHAPE_DIM = list(
 )
 
 
-@pytest.mark.weight_norm
+@pytest.mark.weight_norm_interface
 @pytest.mark.parametrize("shape, dim", WEIGHT_NORM_INTERFACE_SHAPE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_weightnorm_interface(shape, dtype, dim):
@@ -474,7 +474,7 @@ def test_accuracy_weightnorm_interface(shape, dtype, dim):
 # @pytest.mark.skipif(
 #     True, reason="Temporarely skip for ci"
 # )  # todo: improve backward precision
-@pytest.mark.weight_norm
+@pytest.mark.weight_norm_interface
 @pytest.mark.parametrize("shape, dim", WEIGHT_NORM_INTERFACE_SHAPE_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_weightnorm_interface_backward(shape, dtype, dim):

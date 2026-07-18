@@ -59,6 +59,7 @@ def test_accuracy_all_without_dim(shape, dtype, kind):
 
 
 @pytest.mark.all
+@pytest.mark.all_dim
 @pytest.mark.skipif(SkipVersion("torch", "<2.2"), reason="Skipping Pytorch version.")
 @pytest.mark.parametrize("kind, keepdim, dim, shape", KIND_KEEPDIM_DIMS_SHAPE)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + [torch.bool])
@@ -145,6 +146,7 @@ def test_accuracy_any_without_dim(shape, dtype, kind):
 
 
 @pytest.mark.any
+@pytest.mark.any_dim
 @pytest.mark.skipif(SkipVersion("torch", "<2.2"), reason="Skipping Pytorch version.")
 @pytest.mark.parametrize("kind, keepdim, dim, shape", KIND_KEEPDIM_DIMS_SHAPE)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + [torch.bool])
@@ -241,6 +243,7 @@ def test_accuracy_max_without_dim_uncontiguous(shape, dtype):
 
 # TODO: failed at (200, 40999, 3), while successed at this shape in mean_dim
 @pytest.mark.max
+@pytest.mark.max_dim
 @pytest.mark.parametrize("shape", REDUCTION_SMALL_SHAPES)
 @pytest.mark.parametrize("keepdim, dim", KEEPDIM_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
@@ -260,6 +263,7 @@ def test_accuracy_max_dim(shape, dim, keepdim, dtype):
 
 
 @pytest.mark.max
+@pytest.mark.max_dim
 @pytest.mark.parametrize("shape", [(4, 1048577, 4)])
 @pytest.mark.parametrize("keepdim, dim", [(True, 1), (False, 1)])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
@@ -293,6 +297,7 @@ def test_accuracy_mean_without_dim(shape, dtype):
 
 
 @pytest.mark.mean
+@pytest.mark.mean_dim
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("keepdim, dim", KEEPDIM_DIMS)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -342,6 +347,7 @@ def test_accuracy_min_without_dim_all_inf(shape, dtype):
 
 # TODO: failed at (200, 40999, 3), while successed at this shape in mean_dim
 @pytest.mark.min
+@pytest.mark.min_dim
 @pytest.mark.parametrize("shape", REDUCTION_SMALL_SHAPES)
 @pytest.mark.parametrize("keepdim, dim", KEEPDIM_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES)
@@ -376,6 +382,7 @@ def test_accuracy_prod_without_dim(shape, dtype):
 
 # TODO: failed at (200, 40999, 3), while successed at this shape in mean_dim
 @pytest.mark.prod
+@pytest.mark.prod_dim
 @pytest.mark.parametrize("shape", REDUCTION_SMALL_SHAPES)
 @pytest.mark.parametrize("keepdim, dim", KEEPDIM_DIM)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -405,6 +412,7 @@ def test_accuracy_sum_without_dim(shape, dtype):
 
 
 @pytest.mark.sum
+@pytest.mark.sum_dim
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("keepdim, dim", KEEPDIM_DIM + [(False, []), (True, [])])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
