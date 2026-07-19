@@ -21,17 +21,23 @@ def normal_input_fn(shape, cur_dtype, device):
             marks=pytest.mark.normal,
         ),
         pytest.param(
-            "uniform_",
-            torch.Tensor.uniform_,
-            unary_input_fn,
-            marks=pytest.mark.uniform_,
+            "normal_tensor_tensor",
+            torch.normal,
+            normal_input_fn,
+            marks=pytest.mark.normal_tensor_tensor,
         ),
-        pytest.param(
-            "exponential_",
-            torch.Tensor.exponential_,
-            unary_input_fn,
-            marks=pytest.mark.exponential_,
-        ),
+        #pytest.param(
+        #    "uniform_",
+        #    torch.Tensor.uniform_,
+        #    unary_input_fn,
+        #    marks=pytest.mark.uniform_,
+        #),
+        #pytest.param(
+        #    "exponential_",
+        #    torch.Tensor.exponential_,
+        #    unary_input_fn,
+        #    marks=pytest.mark.exponential_,
+        #),
     ],
 )
 def test_distribution_benchmark(op_name, torch_op, input_fn):

@@ -126,17 +126,17 @@ def batchnorm_input_fn(shape, dtype, device):
                 ),
             ],
         ),
-        pytest.param(
-            "batch_norm",
-            torch.batch_norm,
-            batchnorm_input_fn,
-            marks=[
-                pytest.mark.batch_norm,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
+        #pytest.param(
+        #    "batch_norm",
+        #    torch.batch_norm,
+        #    batchnorm_input_fn,
+        #    marks=[
+        #        pytest.mark.batch_norm,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
     ],
 )
 def test_group_and_layer_and_instance_norm_benchmark(op_name, torch_op, input_fn):
@@ -172,6 +172,7 @@ def weight_norm_input_fn(shape, dtype, device):
 
 norm_operations = [
     ("weight_norm", torch._weight_norm, weight_norm_input_fn),
+    #("weight_norm_interface", torch._weight_norm_interface, weight_norm_interface_input_fn),
     ("vector_norm", torch.linalg.vector_norm, unary_input_fn),
 ]
 

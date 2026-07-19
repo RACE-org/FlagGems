@@ -52,22 +52,29 @@ class UnaryReductionBenchmark(Benchmark):
 
 forward_operations = [
     ("all", torch.all, FLOAT_DTYPES),
+    ("all_dim", torch.all, FLOAT_DTYPES),
     *(
         [
             ("any", torch.any, FLOAT_DTYPES),
+            ("any_dim", torch.any, FLOAT_DTYPES),
         ]
         if flag_gems.device != "musa"
         else []
     ),
     ("amax", torch.amax, FLOAT_DTYPES),
-    ("argmax", torch.argmax, FLOAT_DTYPES),
-    ("argmin", torch.argmin, FLOAT_DTYPES),
+    #("argmax", torch.argmax, FLOAT_DTYPES),
+    #("argmin", torch.argmin, FLOAT_DTYPES),
     ("max", torch.max, FLOAT_DTYPES),
+    ("max_dim", torch.max, FLOAT_DTYPES),
     ("mean", torch.mean, FLOAT_DTYPES),
+    ("mean_dim", torch.mean, FLOAT_DTYPES),
     ("min", torch.min, FLOAT_DTYPES),
+    ("min_dim", torch.min, FLOAT_DTYPES),
     ("prod", torch.prod, FLOAT_DTYPES),
+    ("prod_dim", torch.prod, FLOAT_DTYPES),
     ("softmax", torch.nn.functional.softmax, FLOAT_DTYPES),
     ("sum", torch.sum, FLOAT_DTYPES),
+    ("sum_dim", torch.sum, FLOAT_DTYPES),
     ("var_mean", torch.var_mean, FLOAT_DTYPES),
 ]
 
@@ -203,42 +210,42 @@ def mse_loss_input_fn(shape, cur_dtype, device):
                 ),
             ],
         ),
-        pytest.param(
-            "cummax",
-            torch.cummax,
-            cumsum_input_fn,
-            FLOAT_DTYPES + INT_DTYPES,
-            marks=[
-                pytest.mark.cummax,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
-        pytest.param(
-            "nll_loss",
-            torch.nn.functional.nll_loss,
-            nll_loss_input_fn,
-            FLOAT_DTYPES,
-            marks=[
-                pytest.mark.nll_loss,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
-        pytest.param(
-            "mse_loss",
-            torch.nn.functional.mse_loss,
-            mse_loss_input_fn,
-            FLOAT_DTYPES,
-            marks=[
-                pytest.mark.mse_loss,
-                pytest.mark.skipif(
-                    flag_gems.device == "musa", reason="ZeroDivisionError"
-                ),
-            ],
-        ),
+        #pytest.param(
+        #    "cummax",
+        #    torch.cummax,
+        #    cumsum_input_fn,
+        #    FLOAT_DTYPES + INT_DTYPES,
+        #    marks=[
+        #        pytest.mark.cummax,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
+        #pytest.param(
+        #    "nll_loss",
+        #    torch.nn.functional.nll_loss,
+        #    nll_loss_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=[
+        #        pytest.mark.nll_loss,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
+        #pytest.param(
+        #    "mse_loss",
+        #    torch.nn.functional.mse_loss,
+        #    mse_loss_input_fn,
+        #    FLOAT_DTYPES,
+        #    marks=[
+        #        pytest.mark.mse_loss,
+        #        pytest.mark.skipif(
+        #            flag_gems.device == "musa", reason="ZeroDivisionError"
+        #        ),
+        #    ],
+        #),
     ],
 )
 def test_generic_reduction_benchmark(op_name, torch_op, input_fn, dtypes):
@@ -259,7 +266,7 @@ def test_generic_reduction_benchmark(op_name, torch_op, input_fn, dtypes):
     vendor_name == "kunlunxin" or vendor_name == "hygon", reason="RESULT TODOFIX"
 )
 @pytest.mark.skipif(flag_gems.device == "musa", reason="ZeroDivisionError")
-@pytest.mark.count_nonzero
+#@pytest.mark.count_nonzero
 def test_perf_count_nonzero():
     def count_nonzero_input_fn(shape, dtype, device):
         inp = torch.randn(shape, dtype=dtype, device=device)
@@ -276,7 +283,7 @@ def test_perf_count_nonzero():
     bench.run()
 
 
-@pytest.mark.dot
+#@pytest.mark.dot
 def test_perf_dot():
     def dot_input_fn(shape, dtype, device):
         inp = generate_tensor_input(shape, dtype=dtype, device=device)

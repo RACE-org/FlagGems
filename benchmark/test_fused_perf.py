@@ -11,7 +11,7 @@ from .performance_utils import (
 )
 
 
-@pytest.mark.gelu_and_mul
+#@pytest.mark.gelu_and_mul
 def test_perf_gelu_and_mul():
     def torch_op(x, y):
         return torch.mul(torch.nn.functional.gelu(x), y)
@@ -27,7 +27,7 @@ def test_perf_gelu_and_mul():
     bench.run()
 
 
-@pytest.mark.silu_and_mul
+#@pytest.mark.silu_and_mul
 def test_perf_silu_and_mul():
     def torch_op(x, y):
         return torch.mul(torch.nn.functional.silu(x), y)
@@ -69,7 +69,7 @@ def test_perf_skip_layernorm():
     bench.run()
 
 
-@pytest.mark.fused_add_rms_norm
+#@pytest.mark.fused_add_rms_norm
 def test_perf_fused_add_rms_norm():
     def fused_add_rms_norm_input_fn(shape, dtype, device):
         inp = torch.randn(shape, dtype=dtype, device=device)

@@ -83,9 +83,9 @@ def mse_loss(inp, target, reduction=Reduction.MEAN.value):
     block_size = _pick_block_size(per_tile)
 
     mid = torch.empty((TOTAL_CORE_NUM,), dtype=torch.float32, device=inp.device)
-    out = torch.empty([], dtype=dtype, device=inp.device)
+    out = torch.empty([], dtype=torch.float32, device=inp.device)
 
     with torch_device_fn.device(inp.device):
         mse_sum_kernel[(TOTAL_CORE_NUM, 1, 1)](inp, target, mid, M, block_size)
         final_reduce_kernel[(1, 1, 1)](mid, out, M, reduction)
-    return out
+    return out.to(dtype)

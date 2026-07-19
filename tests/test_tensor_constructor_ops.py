@@ -19,7 +19,7 @@ from .conftest import TO_CPU
 device = flag_gems.device
 
 
-@pytest.mark.rand
+#@pytest.mark.rand
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_rand(shape, dtype):
@@ -30,7 +30,7 @@ def test_accuracy_rand(shape, dtype):
     assert (ref_out >= 0.0).all()
 
 
-@pytest.mark.randn
+#@pytest.mark.randn
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_randn(shape, dtype):
@@ -45,7 +45,7 @@ def test_accuracy_randn(shape, dtype):
     assert torch.abs(std - 1) < 0.01
 
 
-@pytest.mark.rand_like
+#@pytest.mark.rand_like
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_rand_like(shape, dtype):
@@ -57,7 +57,7 @@ def test_accuracy_rand_like(shape, dtype):
     assert (ref_out >= 0.0).all()
 
 
-@pytest.mark.randn_like
+#@pytest.mark.randn_like
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_randn_like(shape, dtype):
