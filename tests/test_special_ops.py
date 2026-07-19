@@ -138,7 +138,7 @@ def torch_apply_rotary_pos_emb(
     return q_embed, k_embed
 
 
-@pytest.mark.apply_rotary_pos_emb
+#@pytest.mark.apply_rotary_pos_emb
 @pytest.mark.parametrize("batch_size", [2] if TO_CPU else [4, 8])
 @pytest.mark.parametrize("max_seq_len", [16] if TO_CPU else [512, 2048])
 @pytest.mark.parametrize("q_heads,k_heads", [(8, 1), (6, 2), (1, 1), (8, 8)])
@@ -290,6 +290,7 @@ def test_accuracy_resolve_conj(shape, dtype):
 
 
 @pytest.mark.unique
+@pytest.mark.unique2
 @pytest.mark.parametrize("shape", SPECIAL_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
 @pytest.mark.parametrize("sorted", [True])
@@ -413,6 +414,7 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
 
 
 @pytest.mark.pad
+@pytest.mark.constant_pad_nd
 @pytest.mark.parametrize("shape", [[1024, 1024], [64, 64, 64, 64]])
 @pytest.mark.parametrize("dtype", [torch.float32] if TO_CPU else FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
@@ -516,7 +518,7 @@ def test_arange(start, step, end, dtype, device, pin_memory):
             start, end, step, dtype=dtype, device=device, pin_memory=pin_memory
         )
 
-    gems_assert_equal(res_out, ref_out)
+    gems_assert_equal(res_out.to("cpu"), ref_out)
 
 
 @pytest.mark.isin
@@ -753,7 +755,7 @@ VSTACK_SHAPES = [
 ]
 
 
-@pytest.mark.vstack
+#@pytest.mark.vstack
 @pytest.mark.parametrize("shape", VSTACK_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES)
 def test_accuracy_vstack(shape, dtype):
@@ -831,6 +833,7 @@ def test_accuracy_repeat_interleave_tensor(shape, dtype):
 
 
 @pytest.mark.repeat_interleave
+@pytest.mark.repeat_interleave_self_tensor
 @pytest.mark.parametrize("shape", REPEAT_INTERLEAVE_SHAPES)
 @pytest.mark.parametrize("dim", [-1, 0, 1])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)

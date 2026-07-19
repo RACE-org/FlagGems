@@ -96,6 +96,7 @@ def test_accuracy_argmax(shape, dim, keepdim, dtype):
 
 
 @pytest.mark.CrossEntropyLoss
+@pytest.mark.cross_entropy_loss
 @pytest.mark.parametrize("label_smoothing, ignore_index, shape", SMOOTH_IGNORE_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
 @pytest.mark.parametrize("weight", [True, False])
@@ -145,6 +146,7 @@ def test_accuracy_cross_entropy_loss_indices(
 
 
 @pytest.mark.CrossEntropyLoss
+@pytest.mark.cross_entropy_loss
 @pytest.mark.parametrize("label_smoothing, shape", SMOOTH_SHAPE)
 @pytest.mark.parametrize("reduction", CROSS_ENTROPY_LOSS_REDUCTION)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -716,7 +718,7 @@ SHAPE_CONV1D = [
 
 
 @pytest.mark.skip("conv1d introduces failures, disable it temporarily")
-@pytest.mark.conv1d
+#pytest.mark.conv1d
 @pytest.mark.parametrize("shape, kernel", SHAPE_CONV1D)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [1])
@@ -825,7 +827,7 @@ SHAPE_DEPTHWISE = [
 
 # test for depthwise depends on  cuda
 @pytest.mark.skip("conv_depthwise2d introduces failures, disable it temporarily")
-@pytest.mark.conv_depthwise2d
+#@pytest.mark.conv_depthwise2d
 @pytest.mark.parametrize("shape_input, shape_weight,kernel ", SHAPE_DEPTHWISE)
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("padding", [2])

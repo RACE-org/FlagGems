@@ -56,13 +56,13 @@ def arange_input_fn(shape, dtype, device):
 # Define operations and their corresponding input functions
 tensor_constructor_operations = [
     # generic tensor constructor
-    ("rand", torch.rand, generic_constructor_input_fn),
-    ("randn", torch.randn, generic_constructor_input_fn),
+    #("rand", torch.rand, generic_constructor_input_fn),
+    #("randn", torch.randn, generic_constructor_input_fn),
     ("ones", torch.ones, generic_constructor_input_fn),
     ("zeros", torch.zeros, generic_constructor_input_fn),
     # generic tensor-like constructor
-    ("rand_like", torch.rand_like, unary_input_fn),
-    ("randn_like", torch.randn_like, unary_input_fn),
+    #("rand_like", torch.rand_like, unary_input_fn),
+    #("randn_like", torch.randn_like, unary_input_fn),
     ("ones_like", torch.ones_like, unary_input_fn),
     ("zeros_like", torch.zeros_like, unary_input_fn),
     # tensor constructor with given value

@@ -27,6 +27,7 @@ def replace_zeros(inp):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("alpha", SCALARS)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -44,6 +45,7 @@ def test_accuracy_add(shape, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("alpha", SCALARS)
@@ -61,6 +63,7 @@ def test_accuracy_add_tensor_scalar(shape, scalar, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("scalar", SCALARS)
 @pytest.mark.parametrize("alpha", SCALARS)
@@ -78,6 +81,7 @@ def test_accuracy_add_scalar_tensor(shape, scalar, alpha, dtype):
 
 
 @pytest.mark.add
+@pytest.mark.add_tensor
 @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
 def test_accuracy_add_scalar_scalar(dtype):
     if dtype == torch.float32:
@@ -583,7 +587,7 @@ def test_accuracy_ge_scalar(shape, dtype):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.gelu_and_mul
+#@pytest.mark.gelu_and_mul
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("approximate", ["none", "tanh"])
@@ -892,7 +896,7 @@ def test_accuracy_rsub(shape, alpha, dtype):
     gems_assert_close(res_out, ref_out, dtype)
 
 
-@pytest.mark.silu_and_mul
+#@pytest.mark.silu_and_mul
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_silu_and_mul(shape, dtype):

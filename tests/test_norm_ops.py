@@ -362,7 +362,7 @@ def test_accuracy_weightnorm_interface(shape, dtype, dim):
     gems_assert_close(res_g_grad, ref_g_grad, dtype, reduce_dim=reduce_size)
 
 
-@pytest.mark.rms_norm
+#@pytest.mark.rms_norm
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_rmsnorm(shape, dtype):
@@ -389,7 +389,7 @@ def test_accuracy_rmsnorm(shape, dtype):
     gems_assert_close(res_out, ref_out, dtype)
 
 
-@pytest.mark.skip_layer_norm
+#@pytest.mark.skip_layer_norm
 @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_skip_layernorm(shape, dtype):

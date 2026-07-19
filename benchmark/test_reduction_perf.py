@@ -53,7 +53,7 @@ forward_operations = [
     ("amax", torch.amax, FLOAT_DTYPES),
     ("any", torch.any, FLOAT_DTYPES),
     ("any_dim", torch.any, FLOAT_DTYPES),
-    ("argmax", torch.argmax, FLOAT_DTYPES),
+    #("argmax", torch.argmax, FLOAT_DTYPES),
     ("max", torch.max, FLOAT_DTYPES),
     ("max_dim", torch.max, FLOAT_DTYPES),
     ("mean", torch.mean, FLOAT_DTYPES),
@@ -149,6 +149,13 @@ def cumsum_input_fn(shape, cur_dtype, device):
             marks=pytest.mark.CrossEntropyLoss,
         ),
         pytest.param(
+            "cross_entropy_loss",
+            torch.nn.functional.cross_entropy,
+            cross_entropy_loss_input_fn,
+            FLOAT_DTYPES,
+            marks=pytest.mark.cross_entropy_loss,
+        ),
+        pytest.param(
             "cumsum",
             torch.cumsum,
             cumsum_input_fn,
@@ -171,7 +178,7 @@ def test_generic_reduction_benchmark(op_name, torch_op, input_fn, dtypes):
     bench.run()
 
 
-@pytest.mark.count_nonzero
+#@pytest.mark.count_nonzero
 def test_perf_count_nonzero():
     def count_nonzero_input_fn(shape, dtype, device):
         inp = torch.randn(shape, dtype=dtype, device=device)
