@@ -5,75 +5,181 @@ import torch
 import triton
 import triton.language as tl
 
+from flag_gems.runtime import torch_device_fn
+from flag_gems.utils import libentry
+from flag_gems.utils import triton_lang_extension as tle
+
 logger = logging.getLogger(__name__)
 
+# sophgo stack fast paths.
+#
+# The benchmark stacks 3 contiguous tensors along dim=0 (and dim=-1 under the
+# comprehensive level), on 2D (1024, 2^i) and 3D (64, 64, 2^i) shapes. The prior
+# sophgo fast path only fired for exactly 4 tensors of ndim==2, so the benchmark
+# missed it entirely and fell back to the generic per-tensor pointwise copy
+# (one kernel launch + strided view per input, T separate launches).
+#
+# stack(dim=0) of T contiguous tensors is just T back-to-back whole-tensor
+# memcpys into out(T, *shape): out[t*numel : (t+1)*numel] = tensors[t].flat.
+# All T copies are fused into ONE kernel — a flat 1D copy with the grid capped
+# at the core count, each program grid-striding over BLOCK chunks of every
+# tensor. No divmod, no strided views, one launch.
+#
+# stack(dim=last) adds a new trailing axis: out(*inp_shape, T) with element
+# (r, t) at out[r*T + t] — contiguous input read, stride-T store, still one
+# fused launch.
 
+_STACK_GRID_CAP = 64
+_STACK_BLOCK = 4096
+_STACK_MAX_T = 8  # unrolled pointer args; larger T falls back to generic
+
+
+@libentry()
 @triton.jit
-def stack_copy_func_kernel_4(
+def _stack_dim0_flat_kernel(
     out_ptr,
-    in_ptr_a,
-    in_ptr_b,
-    in_ptr_c,
-    in_ptr_d,
-    dim_size_out,
-    dim_prod_post,
-    dim_offset_a,
-    dim_offset_b,
-    dim_offset_c,
-    dim_offset_d,
-    total_elements_a,
-    total_elements_b,
-    total_elements_c,
-    total_elements_d,
-    BLOCK_X: tl.constexpr,
+    p0,
+    p1,
+    p2,
+    p3,
+    p4,
+    p5,
+    p6,
+    p7,
+    numel,  # elements per input tensor
+    T: tl.constexpr,
+    BLOCK: tl.constexpr,
+    CHUNKS,
 ):
-    pid_x = tl.program_id(0)
-    pid_y = tl.program_id(1)
+    pid = tle.program_id(0)
+    nprog = tle.num_programs(0)
+    for c in range(CHUNKS):
+        chunk = pid + c * nprog
+        off = chunk * BLOCK + tl.arange(0, BLOCK)
+        mask = off < numel
+        # each tensor's block copied to its own slice out[t*numel + off].
+        if T > 0:
+            tl.store(
+                out_ptr + 0 * numel + off,
+                tl.load(p0 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 1:
+            tl.store(
+                out_ptr + 1 * numel + off,
+                tl.load(p1 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 2:
+            tl.store(
+                out_ptr + 2 * numel + off,
+                tl.load(p2 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 3:
+            tl.store(
+                out_ptr + 3 * numel + off,
+                tl.load(p3 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 4:
+            tl.store(
+                out_ptr + 4 * numel + off,
+                tl.load(p4 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 5:
+            tl.store(
+                out_ptr + 5 * numel + off,
+                tl.load(p5 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 6:
+            tl.store(
+                out_ptr + 6 * numel + off,
+                tl.load(p6 + off, mask=mask, other=0),
+                mask=mask,
+            )
+        if T > 7:
+            tl.store(
+                out_ptr + 7 * numel + off,
+                tl.load(p7 + off, mask=mask, other=0),
+                mask=mask,
+            )
 
-    if pid_y == 0:
-        in_ptr = in_ptr_a
-        dim_offset = dim_offset_a
-        total_elements = total_elements_a
-    elif pid_y == 1:
-        in_ptr = in_ptr_b
-        dim_offset = dim_offset_b
-        total_elements = total_elements_b
-    elif pid_y == 2:
-        in_ptr = in_ptr_c
-        dim_offset = dim_offset_c
-        total_elements = total_elements_c
-    else:
-        in_ptr = in_ptr_d
-        dim_offset = dim_offset_d
-        total_elements = total_elements_d
 
-    block_start = pid_x.to(tl.int64) * BLOCK_X
-    offsets = tl.arange(0, BLOCK_X).to(tl.int64)
-    idx = block_start + offsets
-    scalar_zero = offsets * 0
+@libentry()
+@triton.jit
+def _stack_dimlast_kernel(
+    out_ptr,
+    p0,
+    p1,
+    p2,
+    p3,
+    p4,
+    p5,
+    p6,
+    p7,
+    numel,  # elements per input tensor
+    T: tl.constexpr,
+    BLOCK: tl.constexpr,
+    CHUNKS,
+):
+    pid = tle.program_id(0)
+    nprog = tle.num_programs(0)
+    for c in range(CHUNKS):
+        chunk = pid + c * nprog
+        off = chunk * BLOCK + tl.arange(0, BLOCK)
+        mask = off < numel
+        # element r of tensor t lands at out[r*T + t]: contiguous read, stride-T store.
+        base = off * T
+        if T > 0:
+            tl.store(
+                out_ptr + base + 0, tl.load(p0 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 1:
+            tl.store(
+                out_ptr + base + 1, tl.load(p1 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 2:
+            tl.store(
+                out_ptr + base + 2, tl.load(p2 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 3:
+            tl.store(
+                out_ptr + base + 3, tl.load(p3 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 4:
+            tl.store(
+                out_ptr + base + 4, tl.load(p4 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 5:
+            tl.store(
+                out_ptr + base + 5, tl.load(p5 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 6:
+            tl.store(
+                out_ptr + base + 6, tl.load(p6 + off, mask=mask, other=0), mask=mask
+            )
+        if T > 7:
+            tl.store(
+                out_ptr + base + 7, tl.load(p7 + off, mask=mask, other=0), mask=mask
+            )
 
-    dim_size_out = dim_size_out + scalar_zero
-    dim_prod_post = dim_prod_post + scalar_zero
-    dim_offset = dim_offset + scalar_zero
-    total_elements = total_elements + scalar_zero
 
-    mask = idx < total_elements
-
-    pre_idx = idx // dim_prod_post
-    post_idx = idx % dim_prod_post
-
-    out_idx = (
-        pre_idx * dim_size_out * dim_prod_post + dim_offset * dim_prod_post + post_idx
-    )
-
-    data = tl.load(in_ptr + idx, mask=mask)
-    tl.store(out_ptr + out_idx, data, mask=mask)
+def _pad_ptrs(tensors):
+    return list(tensors) + [tensors[0]] * (_STACK_MAX_T - len(tensors))
 
 
 def stack(
     tensors: Union[Tuple[torch.Tensor, ...], List[torch.Tensor]], dim: int = 0
 ) -> torch.Tensor:
-    logger.debug("GEMS STACK")
+    logging.debug("GEMS_SOPHGO_TPU STACK")
+
+    def _generic_stack():
+        from flag_gems.ops.stack import stack as generic_stack
+
+        return generic_stack(tensors, dim)
 
     if len(tensors) == 0:
         raise RuntimeError("stack expected a non-empty TensorList")
@@ -89,85 +195,39 @@ def stack(
             )
         if s != inp0_shape:
             raise RuntimeError(
-                f"stack expects each tensor to be equal size, but got {inp0_shape} at entry 0 and {s} at entry {i + 1}"
+                f"stack expects each tensor to be equal size, but got {inp0_shape} at entry 0 and {s} at entry {i+1}"
             )
 
+    ndim = len(inp0_shape)
     if dim < 0:
-        dim = dim + len(inp0_shape) + 1
+        dim = dim + ndim + 1
 
-    # Type promotion: find the common dtype for all tensors
-    dtypes = [t.dtype for t in tensors]
-    dtype = dtypes[0]
-    for dt in dtypes[1:]:
-        dtype = torch.promote_types(dtype, dt)
-    # Convert all tensors to the result dtype if needed
-    tensors = [t.to(dtype) if t.dtype != dtype else t for t in tensors]
-    device = tensors[0].device
-    out_shape = inp0_shape[:dim] + [len(tensors)] + inp0_shape[dim:]
-    out = torch.empty(out_shape, dtype=dtype, device=device)
+    T = len(tensors)
+    all_contig = all(t.is_contiguous() for t in tensors)
+    same_dtype = all(t.dtype == tensors[0].dtype for t in tensors)
 
-    dim_prod_post = 1
-    for s in inp0_shape[dim:]:
-        dim_prod_post *= s
+    if T <= _STACK_MAX_T and all_contig and same_dtype and (dim == 0 or dim == ndim):
+        numel = tensors[0].numel()
+        if numel > 0:
+            out_shape = inp0_shape[:dim] + [T] + inp0_shape[dim:]
+            out = torch.empty(
+                out_shape, dtype=tensors[0].dtype, device=tensors[0].device
+            )
+            chunks_total = triton.cdiv(numel, _STACK_BLOCK)
+            grid_size = min(chunks_total, _STACK_GRID_CAP)
+            chunks = triton.cdiv(chunks_total, grid_size)
+            ptrs = _pad_ptrs(tensors)
+            kernel = _stack_dim0_flat_kernel if dim == 0 else _stack_dimlast_kernel
+            with torch_device_fn.device(tensors[0].device):
+                kernel[(grid_size,)](
+                    out,
+                    *ptrs,
+                    numel,
+                    T=T,
+                    BLOCK=_STACK_BLOCK,
+                    CHUNKS=chunks,
+                    num_warps=4,
+                )
+            return out
 
-    BLOCK = 1024
-    i = 0
-    while i < len(tensors):
-        tensors_in_batch = tensors[i : i + 4]
-        num_tensors_in_batch = len(tensors_in_batch)
-
-        args = []
-        total_elements_list = []
-
-        for j in range(4):
-            if j < num_tensors_in_batch:
-                tensor = tensors_in_batch[j].contiguous()
-                total_elements = tensor.numel()
-                args.extend([tensor, i + j, total_elements])
-                total_elements_list.append(total_elements)
-            else:
-                args.extend([tensors_in_batch[0], 0, 0])
-                total_elements_list.append(0)
-
-        dim_size_out = len(tensors)
-
-        grid_y = num_tensors_in_batch
-        max_elements_in_batch = tensors[0].numel() if total_elements_list else 0
-        grid = (triton.cdiv(max_elements_in_batch, BLOCK), grid_y)
-
-        (
-            tensor_a,
-            dim_offset_a,
-            total_elements_a,
-            tensor_b,
-            dim_offset_b,
-            total_elements_b,
-            tensor_c,
-            dim_offset_c,
-            total_elements_c,
-            tensor_d,
-            dim_offset_d,
-            total_elements_d,
-        ) = args
-
-        stack_copy_func_kernel_4[grid](
-            out,
-            tensor_a,
-            tensor_b,
-            tensor_c,
-            tensor_d,
-            dim_size_out,
-            dim_prod_post,
-            dim_offset_a,
-            dim_offset_b,
-            dim_offset_c,
-            dim_offset_d,
-            total_elements_a,
-            total_elements_b,
-            total_elements_c,
-            total_elements_d,
-            BLOCK_X=BLOCK,
-        )
-        i += num_tensors_in_batch
-
-    return out
+    return _generic_stack()

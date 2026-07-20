@@ -125,9 +125,7 @@ def softmax(self, dim, half_to_float=False):
             # safe_permute_contiguous handles pseudo-3D (M==1 etc.) by
             # squeezing unit dims before transpose, so every DMA w_stride
             # stays within the 128-byte HW limit.
-            transposed = safe_permute_contiguous(
-                reshaped, [0, 2, 1]
-            )  # (M, K, N)
+            transposed = safe_permute_contiguous(reshaped, [0, 2, 1])  # (M, K, N)
             out_transposed = torch.empty_like(transposed, dtype=dtype)
 
             M_trans = M * K
@@ -141,9 +139,9 @@ def softmax(self, dim, half_to_float=False):
                 N_trans,
             )
 
-            out = safe_permute_contiguous(
-                out_transposed, [0, 2, 1]
-            ).view(original_shape)
+            out = safe_permute_contiguous(out_transposed, [0, 2, 1]).view(
+                original_shape
+            )
         else:
             grid = (M, 1, 1)
             softmax_kernel_inner[grid](
