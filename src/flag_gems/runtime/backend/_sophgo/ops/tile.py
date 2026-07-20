@@ -66,7 +66,7 @@ def tile_kernel(
     in_stride5,
     in_stride6,
     # 最内维
-    in_last,   # = in_shape[-1]
+    in_last,  # = in_shape[-1]
     out_last,  # = in_last * copies_last
     OUTER_RANK: tl.constexpr,
     BLOCK: tl.constexpr,
