@@ -1,47 +1,37 @@
 attention:
-  - gen: true
-    param_map:
-      META:
-        BLOCK_M: block_m
-        BLOCK_N: block_n
-        PRE_LOAD_V: pre_load_v
-      num_warps: warps
-      num_stages: stages
-    block_m:
-      - 32
-      - 64
-      - 128
-    block_n:
-      - 32
-      - 64
-      - 128
-    pre_load_v:
-      - true
-      - false
-    warps:
-      - 4
-      - 8
-    stages:
-      - 2
-      - 3
-      - 4
+- gen: true
+  param_map:
+    META:
+      BLOCK_M: block_m
+      BLOCK_N: block_n
+      PRE_LOAD_V: pre_load_v
+    num_warps: warps
+    num_stages: stages
+  block_m:
+  - 32
+  block_n:
+  - 32
+  pre_load_v:
+  - true
+  warps:
+  - 4
+  stages:
+  - 2
 attention_bwd:
-  - gen: true
-    param_map:
-      META: metas
-      num_warps: warps
-      num_stages: stages
-    metas:
-      - {BLOCK_M1: 32, BLOCK_N1: 128, BLOCK_M2: 128, BLOCK_N2: 32}
-      - {BLOCK_M1: 64, BLOCK_N1: 128, BLOCK_M2: 64, BLOCK_N2: 64}
-      - {BLOCK_M1: 64, BLOCK_N1: 128, BLOCK_M2: 64, BLOCK_N2: 32}
-    warps:
-      - 4
-      - 8
-    stages:
-      - 2
-      - 3
-      - 4
+- gen: true
+  param_map:
+    META: metas
+    num_warps: warps
+    num_stages: stages
+  metas:
+  - BLOCK_M1: 32
+    BLOCK_N1: 128
+    BLOCK_M2: 128
+    BLOCK_N2: 32
+  warps:
+  - 4
+  stages:
+  - 2
 bmm_spacemit:
 - META:
     TILE_M: 128
@@ -51,43 +41,25 @@ bmm_spacemit:
     MICRO_N: 32
     MICRO_K: 32
 bmm:
-  - META:
-      TILE_M: 32
-      TILE_N: 32
-      TILE_K: 32
-      GROUP_M: 1
-    num_warps: 4
-    num_stages: 2
+- META:
+    TILE_M: 32
+    TILE_N: 32
+    TILE_K: 32
+    GROUP_M: 1
+  num_warps: 4
+  num_stages: 2
 argmax:
 - META:
     BLOCK_M: 32
     BLOCK_N: 32
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 32
-- META:
-    BLOCK_M: 64
-    BLOCK_N: 64
 argmin:
 - META:
     BLOCK_M: 8
-    BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 256
-- META:
-    BLOCK_M: 32
     BLOCK_N: 256
 log_softmax:
 - META:
     BLOCK_M: 8
     BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 512
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 512
 mm_spacemit:
 - META:
     BLOCK_SIZE_M: 128
@@ -102,85 +74,41 @@ mm_spacemit:
     MICRO_K: 32
     MICRO_N: 32
 mm_spacemit_v1:
-  - META:
-      BLOCK_M: 64
-      BLOCK_N: 64
-      BLOCK_K: 64
-    num_stages: 5
-    num_warps: 4
+- META:
+    BLOCK_M: 64
+    BLOCK_N: 64
+    BLOCK_K: 64
+  num_stages: 5
+  num_warps: 4
 mm:
-  - META:
-      BLOCK_M: 64
-      BLOCK_N: 64
-      BLOCK_K: 64
-      SPLIT_K: 1
-    num_stages: 5
-    num_warps: 4
+- META:
+    BLOCK_M: 64
+    BLOCK_N: 64
+    BLOCK_K: 64
+    SPLIT_K: 1
+  num_stages: 5
+  num_warps: 4
 softmax_non_inner:
 - META:
     TILE_K: 32
-- META:
-    TILE_K: 64
-- META:
-    TILE_K: 128
-- META:
-    TILE_K: 256
-- META:
-    TILE_K: 1024
 softmax_inner:
 - META:
     TILE_N: 32
-- META:
-    TILE_N: 64
-- META:
-    TILE_N: 128
-- META:
-    TILE_N: 256
-- META:
-    TILE_N: 1024
 test_libentry:
 - META:
     TILE_N: 32
-- META:
-    TILE_N: 64
-- META:
-    TILE_N: 128
-- META:
-    TILE_N: 256
-- META:
-    TILE_N: 512
-- META:
-    TILE_N: 1024
 min:
 - META:
     BLOCK_M: 8
     BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 512
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 512
 prod:
 - META:
     BLOCK_M: 8
     BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 512
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 512
 max:
 - META:
     BLOCK_M: 8
     BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 512
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 512
 addmm_spacemit:
 - META:
     BLOCK_SIZE_M: 128
@@ -190,49 +118,23 @@ addmm_spacemit:
     MICRO_N: 32
     MICRO_K: 32
 addmm:
-  - META:
-      BLOCK_SIZE_M: 128
-      BLOCK_SIZE_N: 256
-      BLOCK_SIZE_K: 64
-    num_stages: 3
-    num_warps: 8
+- META:
+    BLOCK_SIZE_M: 128
+    BLOCK_SIZE_N: 256
+    BLOCK_SIZE_K: 64
+  num_stages: 3
+  num_warps: 8
 cross_entropy_loss:
 - META:
     BLOCK_C: 256
     BLOCK_D: 1
-- META:
-    BLOCK_C: 256
-    BLOCK_D: 4
-- META:
-    BLOCK_C: 256
-    BLOCK_D: 16
-- META:
-    BLOCK_C: 512
-    BLOCK_D: 1
-- META:
-    BLOCK_C: 512
-    BLOCK_D: 4
-- META:
-    BLOCK_C: 512
-    BLOCK_D: 16
-- META:
-    BLOCK_C: 1024
-    BLOCK_D: 1
-- META:
-    BLOCK_C: 1024
-    BLOCK_D: 4
-- META:
-    BLOCK_C: 1024
-    BLOCK_D: 16
 masked_fill:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_n
   block_n:
-  - 1024
-  - 2048
-  - 4096
+  - 512
 all:
 - gen: true
   param_map:
@@ -241,10 +143,8 @@ all:
       BLOCK_N: block_n
   block_m:
   - 2
-  - 4
-  - 8
   block_n:
-  - 1024
+  - 512
 amax:
 - gen: true
   param_map:
@@ -254,7 +154,7 @@ amax:
   block_m:
   - 2
   block_n:
-  - 1024
+  - 512
 any:
 - gen: true
   param_map:
@@ -263,10 +163,8 @@ any:
       BLOCK_N: block_n
   block_m:
   - 2
-  - 4
-  - 8
   block_n:
-  - 1024
+  - 512
 index_select:
 - gen: true
   param_map:
@@ -275,44 +173,31 @@ index_select:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
   block_n:
-  - 1024
-  - 2048
-  - 4096
+  - 512
 layer_norm_loop:
 - gen: true
   param_map:
     META:
       TILE_N: tile_n
   tile_n:
-  - 1024
-  - 2048
-  - 4096
-  - 8192
+  - 512
 layer_norm_backward:
 - gen: true
   param_map:
     META:
       BLOCK_ROW_SIZE: block_r
-      BLOCK_COL_SIZE: 2048
+      BLOCK_COL_SIZE: 512
   block_r:
   - 1
-  - 2
-  - 4
-  - 8
 weight_bias_backward:
 - gen: true
   param_map:
     META:
-      BLOCK_ROW_SIZE: 2048
+      BLOCK_ROW_SIZE: 512
       BLOCK_COL_SIZE: block_c
   block_c:
   - 1
-  - 2
-  - 4
-  - 8
 masked_select:
 - gen: true
   param_map:
@@ -320,10 +205,6 @@ masked_select:
       BLOCK_SIZE: blocks
   blocks:
   - 256
-  - 512
-  - 1024
-  - 2048
-  - 4096
 mean_spacemit_v1:
 - gen: true
   param_map:
@@ -332,15 +213,8 @@ mean_spacemit_v1:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
   - 256
-  - 512
-  - 1024
-  - 2048
-
 mean:
 - gen: true
   param_map:
@@ -349,84 +223,62 @@ mean:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
   - 256
-  - 512
-  - 1024
-  - 2048
-
 instance_norm_loop:
 - gen: true
   param_map:
     META:
       TILE_N: tile_n
   tile_n:
-    - 1024
-    - 2048
-    - 4096
-    - 8192
+  - 512
 instance_norm_backward:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_ROW_SIZE: block_m
-      BLOCK_COL_SIZE: 2048
+      BLOCK_COL_SIZE: 512
   block_m:
-    - 1
-    - 2
-    - 4
-    - 8
-
+  - 1
 instance_norm_weight_bias_backward:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_BATCH_SIZE: block_m
-      BLOCK_COL_SIZE: 2048
+      BLOCK_COL_SIZE: 512
   block_m:
-    - 1
-    - 2
-    - 4
-    - 8
-
+  - 1
 count_nonzero:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_SIZE: block_m
   block_m:
-    - 1024
-    - 2048
-    - 4096
+  - 512
 cross_entropy_loss_sum_and_scale:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_N: block_n
   block_n:
   - 64
-  - 256
-  - 1024
-
 upsample_nearest2d:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_SIZE: block_n
-  block_n: [1024, 2048]
-
+  block_n:
+  - 512
 upsample_bicubic2d_aa:
-- gen : true
+- gen: true
   param_map:
     META:
       BLOCK_X: block_x
       BLOCK_Y: block_y
-  block_x: [512, 256, 128, 64]
-  block_y: [2, 1]
-
+  block_x:
+  - 512
+  block_y:
+  - 2
 mv:
 - gen: true
   param_map:
@@ -435,10 +287,8 @@ mv:
       BLOCK_N: block_n
   block_m:
   - 16
-  - 32
   block_n:
   - 16
-  - 32
 nonzero:
 - gen: true
   param_map:
@@ -446,52 +296,22 @@ nonzero:
       BLOCK_SIZE: blocks
   blocks:
   - 256
-  - 512
-  - 1024
-  - 2048
-  - 4096
-  - 8192
 select_scatter:
 - gen: true
   param_map:
     META:
       BLOCK_M: block_m
-      BLOCK_N: 1024
+      BLOCK_N: 512
     num_warps: 4
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
 select_scatter_inner:
 - META:
     R: 1
     C: 512
-- META:
-    R: 32
-    C: 32
-- META:
-    R: 64
-    C: 64
-- META:
-    R: 4
-    C: 512
-- META:
-    R: 16
-    C: 128
 softmax:
 - META:
     TILE_K: 32
-- META:
-    TILE_K: 64
-- META:
-    TILE_K: 128
-- META:
-    TILE_K: 256
-- META:
-    TILE_K: 512
-- META:
-    TILE_K: 1024
 vstack:
 - gen: true
   param_map:
@@ -499,9 +319,6 @@ vstack:
       BLOCK_SIZE: blocks
   blocks:
   - 512
-  - 1024
-  - 2048
-  - 4096
 gather:
 - gen: true
   param_map:
@@ -510,14 +327,8 @@ gather:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
   - 256
-  - 512
-  - 1024
-  - 2048
 scatter:
 - gen: true
   param_map:
@@ -526,24 +337,16 @@ scatter:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
   - 256
-  - 512
-  - 1024
-  - 2048
 sum:
 - gen: true
   param_map:
     META:
       BLOCK_M: block_m
-      BLOCK_N: 1024
+      BLOCK_N: 512
   block_m:
   - 2
-  - 4
-  - 8
 triu:
 - gen: true
   param_map:
@@ -552,11 +355,8 @@ triu:
       N_BLOCK_SIZE: block_n
   block_m:
   - 8
-  - 16
-  - 32
   block_n:
   - 256
-  - 512
 triu_batch:
 - gen: true
   param_map:
@@ -566,13 +366,10 @@ triu_batch:
       N_BLOCK_SIZE: block_n
   batch_block:
   - 1
-  - 2
   block_m:
   - 8
-  - 16
   block_n:
   - 128
-  - 256
 weight_norm_kernel_last:
 - gen: true
   param_map:
@@ -581,14 +378,8 @@ weight_norm_kernel_last:
       BLOCK_COL_SIZE: block_n
   block_m:
   - 512
-  - 1024
-  - 2048
   block_n:
   - 1
-  - 2
-  - 4
-  - 8
-  - 32
 weight_norm_kernel_first:
 - gen: true
   param_map:
@@ -597,14 +388,8 @@ weight_norm_kernel_first:
       BLOCK_COL_SIZE: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
-  - 32
   block_n:
   - 512
-  - 1024
-  - 2048
 weight_norm_kernel:
 - gen: true
   param_map:
@@ -613,26 +398,16 @@ weight_norm_kernel:
       BLOCK_COL_SIZE: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
-  - 32
   block_n:
   - 256
-  - 512
-  - 1024
-  - 2048
 vector_norm:
 - gen: true
   param_map:
     META:
       BLOCK_M: block_m
-      BLOCK_N: 1024
+      BLOCK_N: 512
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
 var_mean:
 - gen: true
   param_map:
@@ -641,29 +416,22 @@ var_mean:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
-  - 1024
-  - 2048
-
+  - 512
 conv2d_forward:
-  - META:
-      BLOCK_NI_HO_WO: 32
-      BLOCK_CO: 32
-      BLOCK_CI: 32
-    num_warps: 4
-    num_stages: 2
-
+- META:
+    BLOCK_NI_HO_WO: 32
+    BLOCK_CO: 32
+    BLOCK_CI: 32
+  num_warps: 4
+  num_stages: 2
 conv2d_backward_weight:
-  - META:
-      BLOCK_CI_HK_WK: 32
-      BLOCK_CO: 32
-      BLOCK_NO: 32
-    num_warps: 4
-    num_stages: 3
-
+- META:
+    BLOCK_CI_HK_WK: 32
+    BLOCK_CO: 32
+    BLOCK_NO: 32
+  num_warps: 4
+  num_stages: 3
 im2col:
 - gen: true
   param_map:
@@ -671,9 +439,6 @@ im2col:
       BLOCK_SIZE_C: block_size_c
   block_size_c:
   - 256
-  - 64
-  - 32
-
 kron:
 - gen: true
   param_map:
@@ -682,13 +447,8 @@ kron:
       BLOCK_N: block_n
   block_m:
   - 1
-  - 2
-  - 4
-  - 8
   block_n:
-  - 1024
-  - 2048
-
+  - 512
 index_put:
 - gen: true
   param_map:
@@ -697,17 +457,11 @@ index_put:
       BLOCK_SIZE1: block_size1
   block_size0:
   - 1
-  - 2
-  - 4
   block_size1:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 global_average_pool:
 - META:
     BLOCK_SIZE: 32
-
 naive_reduction:
 - gen: true
   param_map:
@@ -716,524 +470,421 @@ naive_reduction:
       BLOCK_N: block_n
   block_m:
   - 2
-  - 4
-  - 8
   block_n:
-  - 1024
-
+  - 512
 abs:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 cos:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 exp:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 erf:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 fill:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 log_sigmoid:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 ones:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 rsqrt:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 sin:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 to:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
   block_size:
-  - 1024
-  - 2048
-  - 4096
-
+  - 512
 add_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 add_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 add_scalar_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 bitwise_and_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 bitwise_and_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 bitwise_not:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 bitwise_or_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 bitwise_or_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 cat:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 cumsum_scan:
 - gen: true
   param_map:
     META:
       TILE_N: tile_n
-  tile_n: [1024, 2048, 4096]
-
+  tile_n:
+  - 512
 div_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 div_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 div_scalar_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 eq_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 eq_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 ge_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 ge_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 gt_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 gt_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 le_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 le_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 lt_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 lt_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 mul_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 mul_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 permute:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [256, 512, 1024]
-
+  block_size:
+  - 256
 pow_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 pow_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 pow_scalar_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 relu_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 relu_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 rsub_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 rsub_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 sigmoid_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 sigmoid_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 silu_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 silu_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 sub_tensor_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 sub_tensor_scalar:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 sub_scalar_tensor:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 tanh_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 tanh_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 where:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 batch_norm:
 - META: {}
-
 gelu_none_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 gelu_tanh_forward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 gelu_none_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 gelu_tanh_backward:
 - gen: true
   param_map:
     META:
       BLOCK_SIZE: block_size
-  block_size: [1024, 2048, 4096]
-
+  block_size:
+  - 512
 log_softmax_spacemit:
 - META:
     ROW_SIZE: 1
     COL_SIZE: 256
-- META:
-    ROW_SIZE: 2
-    COL_SIZE: 256
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 256
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 256
-- META:
-    ROW_SIZE: 2
-    COL_SIZE: 512
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 512
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 512
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 1024
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 1024
-
 outer_spacemit:
 - META:
     BLOCK_M: 4
-    BLOCK_N: 1024
-- META:
-    BLOCK_M: 8
     BLOCK_N: 512
-- META:
-    BLOCK_M: 8
-    BLOCK_N: 1024
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 256
-- META:
-    BLOCK_M: 16
-    BLOCK_N: 512
-- META:
-    BLOCK_M: 32
-    BLOCK_N: 256
-- META:
-    BLOCK_M: 4
-    BLOCK_N: 2048
-- META:
-    BLOCK_M: 8
-    BLOCK_N: 2048
-
 softmax_spacemit:
 - META:
     ROW_SIZE: 1
-    COL_SIZE: 1024
-- META:
-    ROW_SIZE: 2
-    COL_SIZE: 1024
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 1024
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 1024
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 2048
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 2048
-- META:
-    ROW_SIZE: 4
-    COL_SIZE: 4096
-- META:
-    ROW_SIZE: 8
-    COL_SIZE: 4096
-
+    COL_SIZE: 512
 attention_spacemit:
 - gen: true
   param_map:
@@ -1245,14 +896,20 @@ attention_spacemit:
       MICRO_K: micro_k
     num_warps: warps
     num_stages: stages
-  block_m: [128]
-  block_n: [128]
-  micro_m: [8]
-  micro_n: [32]
-  micro_k: [32]
-  warps: [4]
-  stages: [4]
-
+  block_m:
+  - 128
+  block_n:
+  - 128
+  micro_m:
+  - 8
+  micro_n:
+  - 32
+  micro_k:
+  - 32
+  warps:
+  - 4
+  stages:
+  - 4
 conv2d_spacemit:
 - META:
     TILE_M: 32
