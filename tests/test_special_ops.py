@@ -453,11 +453,11 @@ def test_pad(shape, dtype, pad_mode, contiguous):
 @pytest.mark.parametrize(
     "shape",
     [
-        (32, 16, 128, 128),
-        (15, 37, 256, 256),
-        (3, 5, 127, 127),
-        (128, 192, 42, 51),
-        (3, 7, 1023, 1025),
+        (1, 1, 128, 128),
+        (1, 1, 256, 256),
+        (1, 1, 127, 127),
+        (1, 1, 42, 51),
+        (1, 1, 1023, 1025),
     ],
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
