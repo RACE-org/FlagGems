@@ -23,6 +23,7 @@ def bitwise_not_kernel(
     X_ptr,
     Out_ptr,
     n_elements,
+    IS_BOOL: tl.constexpr,
     BLOCK_SIZE: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -53,7 +54,14 @@ def bitwise_not_kernel(
         )
 
         x = tl.load(x_blk, boundary_check=(0,))
-        out = ~x
+        if IS_BOOL:
+            # make_block_ptr treats pointer_type<i1> as pointer_type<i8>, so the
+            # loaded value stays i8 (0/1) instead of being cast back to i1. A raw
+            # `~x` would xor the full byte (0xFF), leaving every element non-zero.
+            # xor 1 gives the correct logical negation for bool tensors.
+            out = x ^ 1
+        else:
+            out = ~x
         tl.store(out_blk, out, boundary_check=(0,))
 
 
@@ -62,8 +70,9 @@ def bitwise_not(A):
     A = A.contiguous()
     out = torch.empty_like(A)
     n = A.numel()
+    is_bool = A.dtype == torch.bool
     with torch_device_fn.device(A.device):
-        bitwise_not_kernel[(NUM_CTAS,)](A, out, n)
+        bitwise_not_kernel[(NUM_CTAS,)](A, out, n, is_bool)
     return out
 
 
@@ -71,8 +80,9 @@ def bitwise_not_(A):
     logger.debug("GEMS_SPACEMIT BITWISE_NOT_")
     A_c = A.contiguous()
     n = A_c.numel()
+    is_bool = A_c.dtype == torch.bool
     with torch_device_fn.device(A.device):
-        bitwise_not_kernel[(NUM_CTAS,)](A_c, A_c, n)
+        bitwise_not_kernel[(NUM_CTAS,)](A_c, A_c, n, is_bool)
     if not A.is_contiguous():
         A.copy_(A_c)
     return A
