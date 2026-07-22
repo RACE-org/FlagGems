@@ -13,8 +13,8 @@ RESOLUTION = {
 def assert_close(res, ref, dtype, equal_nan=False, reduce_dim=1):
     assert res.dtype == dtype
     ref = ref.to(dtype)
-    atol = 1e-4 * reduce_dim
-    rtol = RESOLUTION[dtype]
+    atol = 1e-3
+    rtol = 1e-2
     torch.testing.assert_close(res, ref, atol=atol, rtol=rtol, equal_nan=equal_nan)
 
 

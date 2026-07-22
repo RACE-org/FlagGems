@@ -910,6 +910,27 @@ attention_spacemit:
   - 4
   stages:
   - 4
+layer_norm_persistent:
+- gen: true
+  param_map:
+    META: {}
+    num_warps: warps
+  warps:
+  - 4
+instancenorm:
+- gen: true
+  param_map:
+    META: {}
+    num_warps: warps
+  warps:
+  - 4
+randperm:
+- gen: true
+  param_map:
+    META: {}
+    num_warps: warps
+  warps:
+  - 4
 conv2d_spacemit:
 - META:
     TILE_M: 32
