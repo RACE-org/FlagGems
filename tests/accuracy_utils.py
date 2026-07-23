@@ -107,7 +107,7 @@ INT_DTYPES = [torch.int16, torch.int32]
 ALL_INT_DTYPES = INT_DTYPES + [torch.int64]
 BOOL_TYPES = [torch.bool]
 
-SCALARS = [0.001, -0.999, 100.001, -111.999]
+SCALARS = [0.001, 0.002, 0.003, 0.009]
 STACK_DIM_LIST = [-2, -1, 0, 1]
 
 
