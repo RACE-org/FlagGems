@@ -347,7 +347,7 @@ sum:
       BLOCK_N: 512
   block_m:
   - 2
-triu_spacemit:
+triu:
 - gen: true
   param_map:
     META:
