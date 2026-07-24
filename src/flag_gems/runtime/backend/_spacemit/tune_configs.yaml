@@ -347,16 +347,29 @@ sum:
       BLOCK_N: 512
   block_m:
   - 2
-triu:
+triu_spacemit:
 - gen: true
   param_map:
     META:
       M_BLOCK_SIZE: block_m
       N_BLOCK_SIZE: block_n
   block_m:
-  - 8
+  - 1
   block_n:
-  - 256
+  - 1
+triu_batch_spacemit:
+- gen: true
+  param_map:
+    META:
+      BATCH_BLOCK_SIZE: batch_block
+      M_BLOCK_SIZE: block_m
+      N_BLOCK_SIZE: block_n
+  batch_block:
+  - 1
+  block_m:
+  - 1
+  block_n:
+  - 1
 triu_batch:
 - gen: true
   param_map:
@@ -366,7 +379,7 @@ triu_batch:
   batch_block:
   - 1
   block_mn:
-  - 512
+  - 1
 weight_norm_kernel_last:
 - gen: true
   param_map:

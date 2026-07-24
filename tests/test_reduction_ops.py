@@ -1,3 +1,4 @@
+import math
 import random
 
 import pytest
@@ -294,7 +295,6 @@ def test_accuracy_log_softmax(shape, dtype):
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
-# TODO: failed at (1, 2) (200, 40999, 3)
 @pytest.mark.softmax
 @pytest.mark.parametrize(
     "shape", [(1, 256)] if QUICK_MODE else [(1, 256), (200, 256), (200, 512, 3)]
@@ -302,6 +302,11 @@ def test_accuracy_log_softmax(shape, dtype):
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
 def test_accuracy_softmax(shape, dtype, dim):
+    # SpacemiT device malloc limit is 128MB; skip shapes where input+output+grads
+    # would exceed it (factor 4: inp, out, inp_grad, out_grad).
+    elem_bytes = torch.empty((), dtype=dtype).element_size()
+    if math.prod(shape) * elem_bytes * 4 > 128 * 1024 * 1024:
+        pytest.skip(f"shape {shape} dtype {dtype} exceeds spacemit 128MB device limit")
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     ref_inp = to_reference(inp, True)
 
@@ -325,6 +330,9 @@ def test_accuracy_softmax(shape, dtype, dim):
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 @pytest.mark.parametrize("dim", DIM_LIST)
 def test_accuracy_softmax_with_neg_inf(shape, dtype, dim):
+    elem_bytes = torch.empty((), dtype=dtype).element_size()
+    if math.prod(shape) * elem_bytes * 4 > 128 * 1024 * 1024:
+        pytest.skip(f"shape {shape} dtype {dtype} exceeds spacemit 128MB device limit")
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     inp = torch.where(inp < 0.0, float("-inf"), inp)
     ref_inp = to_reference(inp, True)

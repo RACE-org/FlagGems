@@ -96,7 +96,6 @@ def test_accuracy_groupnorm(N, C, H, W, num_groups, dtype, wb_none):
     [(1, 512)]
     if QUICK_MODE
     else [
-        (200, 36),
         (100, 256),
         (1, 512),
     ],

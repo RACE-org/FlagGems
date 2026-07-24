@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @libentry()
-@triton.autotune(configs=runtime.get_tuned_config("triu"), key=["M", "N"])
+@triton.autotune(configs=runtime.get_tuned_config("triu_spacemit"), key=["M", "N"])
 @triton.jit(do_not_specialize=["diagonal"])
 def triu_kernel(
     X,
@@ -68,7 +68,7 @@ def triu_kernel(
 
 @libentry()
 @triton.autotune(
-    configs=runtime.get_tuned_config("triu_batch"),
+    configs=runtime.get_tuned_config("triu_batch_spacemit"),
     key=["batch", "M", "N", "diagonal"],
 )
 @triton.jit(do_not_specialize=["diagonal"])
