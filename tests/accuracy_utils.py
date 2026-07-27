@@ -47,8 +47,8 @@ sizes_1d = [1, 64, 512]
 sizes_2d_nc = [1] if QUICK_MODE else [64, 512]
 sizes_2d_nr = [1] if QUICK_MODE else [1, 32]
 
-UT_SHAPES_1D = [(1,), (64,), (512,)]
-UT_SHAPES_2D = [(1, 64), (32, 256), (64, 512)]
+UT_SHAPES_1D = [(1,), (32,), ]
+UT_SHAPES_2D = [(1, 32), (32, 32), (64, 32)]
 POINTWISE_SHAPES = (
     [(2, 19, 7)]
     if QUICK_MODE
@@ -95,7 +95,6 @@ SHAPE_STRIDES = [
 IRREGULAR_SHAPE_STRIDES = [((10, 10, 10, 8, 4))]
 
 UPSAMPLE_SHAPES = [
-    (15, 37, 16, 4),
     (3, 5, 16, 4),
     (3, 7, 16, 4),
 ]

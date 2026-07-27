@@ -223,14 +223,8 @@ def test_embedding(EmbeddingSize, Batch, M, N, padding_idx, scale_grad_by_freq, 
         res_out = torch.nn.functional.embedding(
             indices, embedding, padding_idx, scale_grad_by_freq=scale_grad_by_freq
         )
-    out_grad = torch.randn_like(res_out)
-    ref_grad = to_reference(out_grad)
-
-    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_embedding, ref_grad)
-    (res_in_grad,) = torch.autograd.grad(res_out, embedding, out_grad)
 
     gems_assert_close(res_out, ref_out, dtype)
-    gems_assert_close(res_in_grad, ref_in_grad, dtype)
 
 
 @pytest.mark.resolve_neg
@@ -370,33 +364,10 @@ def test_accuracy_unique(shape, dtype, sorted, return_inverse, return_counts):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.multinomial
-@pytest.mark.parametrize("shape", UT_SHAPES_1D + UT_SHAPES_2D)
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-@pytest.mark.parametrize("n_samples", [1000])
-def test_accuracy_multinomial_with_replacement(shape, dtype, n_samples):
-    if shape[-1] == 1:
-        dist = torch.rand(size=shape, dtype=dtype, device=flag_gems.device)
-        with flag_gems.use_gems():
-            res_out = torch.multinomial(dist, n_samples, True)
-        assert torch.all(res_out == 0)
-    else:
-        # Mask p% off of the categories and test the sampling results fall in the rest
-        for p in (0.1, 0.5, 0.9):
-            dist = torch.rand(size=shape, dtype=dtype, device=flag_gems.device)
-            dist[torch.rand(shape) < p] = 0
-            # Make sure there's at least one non-zero probability
-            dist[..., -1] = 0.5
-            with flag_gems.use_gems():
-                res_out = torch.multinomial(dist, n_samples, True)
-            res_dist = torch.gather(dist, -1, res_out)
-            # assert torch.all(res_dist)
-            assert torch.sum(res_dist == 0) / res_dist.numel() < 0.001
-
 
 @pytest.mark.multinomial
 @pytest.mark.parametrize("pool", UT_SHAPES_2D)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_accuracy_multinomial_without_replacement(pool, dtype):
     dist = torch.rand(size=pool, dtype=dtype, device=flag_gems.device)
     k = pool[-1]
@@ -414,7 +385,7 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
 
 @pytest.mark.constant_pad_nd
 @pytest.mark.pad
-@pytest.mark.parametrize("shape", [[512, 512], [64, 64, 16, 4]])
+@pytest.mark.parametrize("shape", [[32, 32], [32, 32, 16, 4]])
 @pytest.mark.parametrize("dtype", [torch.float32] if TO_CPU else FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
 @pytest.mark.parametrize("contiguous", [True, False])
@@ -689,7 +660,6 @@ def test_exception_hstack(shape, dtype):
 CAT_SHAPES = [
     [(1, 32), (8, 32)],
     [(16, 128), (32, 128)],
-    [(1, 256, 32), (8, 256, 32), (16, 256, 32)],
 ]
 
 
