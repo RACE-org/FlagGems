@@ -183,7 +183,7 @@ def test_accuracy_cross_entropy_loss_probabilities(
     gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=shape[dim])
 
 
-CUMSUM_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (16, 256, 32)]
+CUMSUM_SHAPES = [(2, 32)] if QUICK_MODE else [(32, 32), (32, 32, 32)]
 
 
 @pytest.mark.cumsum

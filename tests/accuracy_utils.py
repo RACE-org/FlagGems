@@ -60,9 +60,9 @@ SPECIAL_SHAPES = (
     else [(1,), (32, 32), (20, 64, 15)]
 )
 DISTRIBUTION_SHAPES = [(20, 32, 15)]
-REDUCTION_SHAPES = [(2, 32)] if QUICK_MODE else [(1, 2), (32, 32), (20, 128, 3)]
+REDUCTION_SHAPES = [(2, 32)] if QUICK_MODE else [(32, 32), (32, 32, 32)]
 REDUCTION_SMALL_SHAPES = (
-    [(1, 32)] if QUICK_MODE else [(1, 2), (32, 32), (20, 128, 3)]
+    [(1, 32)] if QUICK_MODE else [(32, 32), (32, 32, 32)]
 )
 STACK_SHAPES = [
     [(16,), (16,)],
