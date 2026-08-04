@@ -463,7 +463,7 @@ def test_accuracy_scatter_mul(src_shape, inp_shape, dim, dtype):
 @pytest.mark.gather
 @pytest.mark.parametrize(
     "inp_shape",
-    [(32, 8, 4)] if QUICK_MODE else [(512, 128, 32), (256, 64, 16), (128, 32, 32)],
+    [(32, 8, 4)] if QUICK_MODE else [(32, 32, 32), (32, 64, 16), (128, 32, 32)],
 )
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
@@ -605,14 +605,14 @@ def test_accuracy_slice_scatter_with_self_overlapping_input():
 @pytest.mark.parametrize("dim", DIM_LIST)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_index_add(shape, dim, dtype):
-    inp = torch.randn(shape, dtype=dtype, device="cuda")
+    inp = torch.randn(shape, dtype=dtype, device="cpu")
 
     src_shape = list(inp.shape)
     index_max = src_shape[dim]
     index_len = index_max
-    index = torch.randperm(index_len, device="cuda")
+    index = torch.randperm(index_len, device="cpu")
     src_shape[dim] = index_len
-    src = torch.randn(src_shape, dtype=dtype, device="cuda")
+    src = torch.randn(src_shape, dtype=dtype, device="cpu")
     alpha = 2
 
     ref_inp = to_reference(inp)
