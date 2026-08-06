@@ -10,8 +10,23 @@ from flag_gems.utils import libtuner
 from flag_gems.utils import tl_extra_shim
 
 _pow = tl_extra_shim.pow
+_floor = tl_extra_shim.floor
 logger = logging.getLogger(__name__)
 NUM_CTAS = 8
+
+
+@triton.jit
+def _pow_signed(base, exp):
+    # The exp/log-based device pow returns NaN for every negative base, but
+    # torch.pow yields a real value when the exponent is an integer (sign set
+    # by exponent parity: odd -> negative, even -> positive). Recover that case.
+    mag = _pow(tl.abs(base), exp)
+    exp_floor = _floor(exp)
+    is_int_exp = exp_floor == exp
+    is_odd_exp = (exp_floor - 2.0 * _floor(exp * 0.5)) != 0.0
+    signed_mag = tl.where(is_odd_exp, -mag, mag)
+    neg_result = tl.where(is_int_exp, signed_mag, float("nan"))
+    return tl.where(base < 0.0, neg_result, _pow(base, exp))
 
 
 @libentry()
@@ -64,7 +79,7 @@ def pow_kernel_tt(
 
         a = tl.load(a_blk, boundary_check=(0,)).to(tl.float32)
         b = tl.load(b_blk, boundary_check=(0,)).to(tl.float32)
-        out = _pow(a, b)
+        out = _pow_signed(a, b)
         tl.store(out_blk, out.to(Out_ptr.type.element_ty), boundary_check=(0,))
 
 
@@ -109,7 +124,7 @@ def pow_kernel_ts(
         )
 
         a = tl.load(a_blk, boundary_check=(0,)).to(tl.float32)
-        out = _pow(a, exponent.to(tl.float32))
+        out = _pow_signed(a, exponent.to(tl.float32))
         tl.store(out_blk, out.to(Out_ptr.type.element_ty), boundary_check=(0,))
 
 
@@ -154,7 +169,7 @@ def pow_kernel_st(
         )
 
         b = tl.load(b_blk, boundary_check=(0,)).to(tl.float32)
-        out = _pow(scalar.to(tl.float32), b)
+        out = _pow_signed(scalar.to(tl.float32), b)
         tl.store(out_blk, out.to(Out_ptr.type.element_ty), boundary_check=(0,))
 
 
