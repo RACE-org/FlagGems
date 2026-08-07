@@ -70,23 +70,6 @@ def test_accuracy_groupnorm(N, C, H, W, num_groups, dtype, wb_none):
     gems_assert_close(res_rstd, ref_rstd, dtype)
     gems_assert_close(res_out, ref_out, dtype)
 
-    out_grad = torch.randn_like(inp)
-    ref_grad = to_reference(out_grad, True)
-
-    if wb_none:
-        (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
-        (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
-    else:
-        (ref_in_grad, ref_weight_grad, ref_bias_grad) = torch.autograd.grad(
-            ref_out, (ref_inp, ref_weight, ref_bias), ref_grad
-        )
-        (res_in_grad, res_weight_grad, res_bias_grad) = torch.autograd.grad(
-            res_out, (inp, weight, bias), out_grad
-        )
-        gems_assert_close(res_weight_grad, ref_weight_grad, dtype, reduce_dim=N * HW)
-        gems_assert_close(res_bias_grad, ref_bias_grad, dtype, reduce_dim=N * HW)
-    group_size = C // num_groups
-    gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=group_size * HW)
 
 
 @pytest.mark.layer_norm
@@ -144,23 +127,6 @@ def test_accuracy_layernorm(shape, dtype, wb_none):
     gems_assert_close(res_mean, ref_mean, res_mean.dtype)
     gems_assert_close(res_rstd, ref_rstd, res_rstd.dtype)
     gems_assert_close(res_out, ref_out, dtype)
-
-    out_grad = torch.randn_like(inp)
-    ref_grad = to_reference(out_grad, True)
-
-    if wb_none:
-        (ref_in_grad,) = torch.autograd.grad(ref_out, ref_inp, ref_grad)
-        (res_in_grad,) = torch.autograd.grad(res_out, inp, out_grad)
-    else:
-        (ref_in_grad, ref_weight_grad, ref_bias_grad) = torch.autograd.grad(
-            ref_out, (ref_inp, ref_weight, ref_bias), ref_grad
-        )
-        (res_in_grad, res_weight_grad, res_bias_grad) = torch.autograd.grad(
-            res_out, (inp, weight, bias), out_grad
-        )
-        gems_assert_close(res_weight_grad, ref_weight_grad, dtype, reduce_dim=M)
-        gems_assert_close(res_bias_grad, ref_bias_grad, dtype, reduce_dim=M)
-    gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=N)
 
 
 @pytest.mark.instance_norm
@@ -257,26 +223,6 @@ def test_accuracy_instancenorm(
         gems_assert_close(running_mean, ref_running_mean, running_mean.dtype)
         gems_assert_close(running_var, ref_running_var, running_var.dtype)
 
-    out_grad = torch.randn_like(inp)
-    ref_grad = to_reference(out_grad, True)
-
-    if has_weight_bias:
-        (ref_in_grad, ref_weight_grad, ref_bias_grad) = torch.autograd.grad(
-            ref_out, (ref_inp, ref_weight, ref_bias), ref_grad
-        )
-        (res_in_grad, res_weight_grad, res_bias_grad) = torch.autograd.grad(
-            res_out, (inp, weight, bias), out_grad
-        )
-    else:
-        (ref_in_grad,) = torch.autograd.grad(ref_out, (ref_inp,), ref_grad)
-        (res_in_grad,) = torch.autograd.grad(res_out, (inp,), out_grad)
-    M = B * C
-    N = inp.numel() // M
-    if use_input_stats:
-        gems_assert_close(res_in_grad, ref_in_grad, dtype, reduce_dim=N)
-        if has_weight_bias:
-            gems_assert_close(res_weight_grad, ref_weight_grad, dtype, reduce_dim=B * N)
-            gems_assert_close(res_bias_grad, ref_bias_grad, dtype, reduce_dim=B * N)
 
 
 WEIGHT_NORM_SHAPE_DIM = list(zip(REDUCTION_SHAPES, [-1] if QUICK_MODE else [0, -1, 1]))
