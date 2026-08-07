@@ -70,19 +70,10 @@ def l2_norm_kernel_1(X, Mid, M, num_tasks, BLOCK_SIZE: tl.constexpr):
     for block_idx in range(sub_num):
         task_idx = pid + num_ctas * block_idx
 
-        X_block_ptr = tl.make_block_ptr(
-            base=X,
-            shape=(M,),
-            strides=(1,),
-            offsets=(task_idx * BLOCK_SIZE,),
-            block_shape=(BLOCK_SIZE,),
-            order=(0,),
-        )
         offset = task_idx * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
         mask = offset < M
 
-        x = tl.load(X_block_ptr, boundary_check=(0,)).to(tl.float32)
-        x = tl.where(mask, x, 0.0)
+        x = tl.load(X + offset, mask=mask, other=0.0).to(tl.float32)
         mid = tl.sum(x * x)
         tl.store(Mid + task_idx, mid)
 
