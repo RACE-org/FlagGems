@@ -400,7 +400,6 @@ def test_accuracy_trunc_divide_scalar_scalar(dtype):
 @pytest.mark.floor_divide
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", [torch.float32])
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_floor_div_float(shape, dtype):
     inp1 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
     inp2 = torch.randn(shape, dtype=dtype, device=flag_gems.device)
@@ -417,7 +416,6 @@ def test_accuracy_floor_div_float(shape, dtype):
 @pytest.mark.floor_divide
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
 @pytest.mark.parametrize("dtype", INT_DTYPES)
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_floor_div_int(shape, dtype):
     inp1 = torch.randint(
         torch.iinfo(dtype).min,
