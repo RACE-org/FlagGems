@@ -175,9 +175,16 @@ def add_base_sum_abc_kernel(
 
 
 def scan_then_fan_col(inp, out, n_ele, dtype):
-    BLOCK_SIZE = 1024
-    if n_ele <= 1024 * 4:
-        BLOCK_SIZE = triton.next_power_of_2(n_ele)
+    # SPACEMIT NOTE: vector.shuffle lowering for large fixed vectors
+    # (>=512 elements) is broken on K3 — cross-chunk shifts in the
+    # tl.cumsum scan pattern are dropped, so prefix_sum[-1] only reflects
+    # the last 256-element chunk. Cap BLOCK_SIZE at 256 to keep the scan
+    # inside a single correctly-lowered chunk; the multi-block +
+    # add_base_sum path handles aggregation across blocks.
+    MAX_BLOCK_SIZE = 256
+    BLOCK_SIZE = MAX_BLOCK_SIZE
+    if n_ele <= MAX_BLOCK_SIZE * 4:
+        BLOCK_SIZE = min(triton.next_power_of_2(n_ele), MAX_BLOCK_SIZE)
     part_num = math.ceil(n_ele / BLOCK_SIZE)
     partial_sum = torch.empty(part_num, dtype=dtype, device=inp.device)
 
@@ -192,9 +199,11 @@ def scan_then_fan_col(inp, out, n_ele, dtype):
 
 
 def scan_then_fan(inp, out, A, B, C, dtype):
-    BLOCK_SIZE = 1024
-    if B <= 1024 * 4:
-        BLOCK_SIZE = triton.next_power_of_2(B)
+    # SPACEMIT NOTE: same shuffle-lowering constraint as scan_then_fan_col.
+    MAX_BLOCK_SIZE = 256
+    BLOCK_SIZE = MAX_BLOCK_SIZE
+    if B <= MAX_BLOCK_SIZE * 4:
+        BLOCK_SIZE = min(triton.next_power_of_2(B), MAX_BLOCK_SIZE)
     part_num = math.ceil(B / BLOCK_SIZE)
     partial_sum = torch.empty(A, part_num, C, dtype=dtype, device=inp.device)
 
