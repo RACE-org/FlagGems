@@ -103,23 +103,23 @@ GenericBenchmark2DOnly:
 
 UnaryReductionBenchmark:
   shapes:
-    - [512,]
-    - [64, 64]
-    - [64, 256, 32]
+    - [4096,]
+    - [64, 256]
+    - [64, 64, 512]
 
 UnaryPointwiseBenchmark:
   shapes:
-    - [512,]
-    - [64, 64]
-    - [64, 256, 32]
+    - [4096,]
+    - [64, 256]
+    - [64, 64, 512]
   shape_desc: "(B), M, N"
 
 # the default shapes info
 Benchmark:
   shapes:
-    - [512,]
-    - [64, 64]
-    - [64, 256, 32]
+    - [4096,]
+    - [64, 256]
+    - [64, 64, 512]
 # default conv shape for input and weight stride padding groups
 # default Ni Ci Hi WI  Co Hk Wk stride padding groups
 ConvBenchmark:

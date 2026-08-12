@@ -14,13 +14,15 @@ DEFAULT_ITER_COUNT = 100
 
 # LEGACY_SHAPES are maintained for legacy benchmark SIZE settings and may be removed in the future.
 # Do not reference this elsewhere.
-LEGACY_SHAPES = [64, 32, 32]
+LEGACY_SHAPES = [32, 64, 128]
 LEGACY_NON_BLAS_SHAPES = [(256, shape) for shape in LEGACY_SHAPES]
 LEGACY_BLAS_SHAPES = [(16, shape, 32, 32) for shape in LEGACY_SHAPES]
 
 # Default shapes settings
 DEFAULT_SHAPES = [
     (32, 32),
+    (128, 128),
+    (256, 256),
 ]
 
 
