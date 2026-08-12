@@ -68,7 +68,7 @@ def triu_kernel(
 
 @libentry()
 @triton.autotune(
-    configs=runtime.get_tuned_config("triu_batch"),
+    configs=runtime.get_tuned_config("triu_batch_spacemit"),
     key=["batch", "M", "N", "diagonal"],
 )
 @triton.jit(do_not_specialize=["diagonal"])

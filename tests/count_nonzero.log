@@ -1,0 +1,828 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems
+configfile: pytest.ini
+collected 5553 items / 5543 deselected / 10 selected
+
+test_reduction_ops.py FFFFFFFFFF                                         [100%]
+
+=================================== FAILURES ===================================
+__________________ test_accuracy_count_nonzero[dtype0-shape0] __________________
+
+shape = (2, 32), dtype = torch.float16
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c3266bb1f10>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e74aca0>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c3272ace4b0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype0-shape1] __________________
+
+shape = (32, 32), dtype = torch.float16
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e346390>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7a1760>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e3468b0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype1-shape0] __________________
+
+shape = (2, 32), dtype = torch.float32
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e6a1450>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7a3060>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e6a2770>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype1-shape1] __________________
+
+shape = (32, 32), dtype = torch.float32
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:115: in count_nonzero
+    count_nonzero_kernel_1[grid](x, out, numel, BLOCK_SIZE=BLOCK_SIZE)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:340: in compile
+    next_module = compile_ir(module, metadata)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/backends/spine_triton/compiler.py:324: in <lambda>
+    stages["linalgdir"] = lambda src, metadata: _optimize_linalgdir(_ttir_to_linalgdir(src, metadata))
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/backends/spine_triton/compiler.py:42: in _ttir_to_linalgdir
+    subprocess.check_call([
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+popenargs = (['/home/zuoweixia/work/tritons/triton-anchor-spacemit/.venv/lib/python3.11/site-packages/triton/backends/spine_triton...on-to-linalg-experimental', '--mlir-print-elementsattrs-with-hex-if-larger=-1', '-o', '/tmp/tmp6zl1ogi_/linalg.mlir'],)
+kwargs = {}
+
+    def check_call(*popenargs, **kwargs):
+        """Run command with arguments.  Wait for command to complete.  If
+        the exit code was zero then return, otherwise raise
+        CalledProcessError.  The CalledProcessError object will have the
+        return code in the returncode attribute.
+    
+        The arguments are the same as for the call function.  Example:
+    
+        check_call(["ls", "-l"])
+        """
+        retcode = call(*popenargs, **kwargs)
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+>           raise CalledProcessError(retcode, cmd)
+E           subprocess.CalledProcessError: Command '['/home/zuoweixia/work/tritons/triton-anchor-spacemit/.venv/lib/python3.11/site-packages/triton/backends/spine_triton/bin/spine-triton-opt', '/tmp/tmp6zl1ogi_/tt.mlir', '--triton-to-linalg-experimental', '--mlir-print-elementsattrs-with-hex-if-larger=-1', '-o', '/tmp/tmp6zl1ogi_/linalg.mlir']' returned non-zero exit status 1.
+
+../../../../../.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/subprocess.py:413: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:22:27: error: unexpected op in ptr sequence
+    tl.atomic_add(out_ptr, nonzero_count)
+                          ^
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:22:27: note: see current operation: %22 = "tt.atomic_rmw"(%arg1, %21, %6) <{atomic_rmw_op = 4 : i32, scope = 1 : i32, sem = 4 : i32}> : (!tt.ptr<i64>, i64, i1) -> i64
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:14:0: warning: Cannot transform tensor of pointers into a single base pointer with tensor of offsets
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:14:0: note: see current operation: 
+module attributes {tt.arch_id = "0xF000", tt.force_vector_interleave = 2 : i32, tt.num_threads = 1 : i32} {
+  tt.func public @count_nonzero_kernel_1(%arg0: !tt.ptr<f32> {tt.divisibility = 16 : i32}, %arg1: !tt.ptr<i64> {tt.divisibility = 16 : i32}, %arg2: i32 {tt.divisibility = 16 : i32}) attributes {noinline = false} {
+    %c0_i32 = arith.constant 0 : i32
+    %c0_i32_0 = arith.constant 0 : i32
+    %cst = arith.constant 0.000000e+00 : f32
+    %c1024 = arith.constant 1024 : index
+    %c0 = arith.constant 0 : index
+    %cst_1 = arith.constant dense<0.000000e+00> : tensor<1024xf32>
+    %true = arith.constant true
+    %c1024_i64 = arith.constant 1024 : i64
+    %0 = tt.get_program_id x : i32
+    %1 = arith.extsi %0 : i32 to i64
+    %2 = arith.muli %1, %c1024_i64 : i64
+    %3 = arith.index_cast %2 : i64 to index
+    %4 = tts.make_tptr %arg0 to sizes: [1024], strides: [1], offsets: [%3], originalOffsets: [%c0], shape: [0], order: [] : <f32> to tensor<1024x!tt.ptr<f32>>
+    %5 = arith.addi %3, %c1024 : index
+    %6 = arith.index_cast %arg2 : i32 to index
+    %7 = arith.minsi %5, %6 : index
+    %8 = arith.maxsi %7, %3 : index
+    %9 = arith.subi %8, %3 : index
+    %10 = "tts.load"(%4, %9, %cst) <{boundaryCheck = array<i32>, operandSegmentSizes = array<i32: 1, 1, 1>, static_mask_dims = array<i64: -9223372036854775808>}> : (tensor<1024x!tt.ptr<f32>>, index, f32) -> tensor<1024xf32>
+    %11 = arith.cmpf une, %10, %cst_1 : tensor<1024xf32>
+    %12 = arith.extui %11 : tensor<1024xi1> to tensor<1024xi64>
+    %13 = "tt.reduce"(%12) <{axis = 0 : i32}> ({
+    ^bb0(%arg3: i64, %arg4: i64):
+      %15 = arith.addi %arg3, %arg4 : i64
+      tt.reduce.return %15 : i64
+    }) : (tensor<1024xi64>) -> i64
+    %14 = tt.atomic_rmw add, acq_rel, gpu, %arg1, %13, %true : (!tt.ptr<i64>, i64, i1) -> i64
+    tt.return
+  }
+}
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:22:27: error: 'tt.atomic_rmw' op operand #0 must be ptr or ranked tensor of ptr values, but got '!ptr.ptr<#ptr.generic_space>'
+    tl.atomic_add(out_ptr, nonzero_count)
+                          ^
+/home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/ops/count_nonzero.py:22:27: note: see current operation: %29 = "tt.atomic_rmw"(%6, %28, %2) <{atomic_rmw_op = 4 : i32, scope = 1 : i32, sem = 4 : i32}> : (!ptr.ptr<#ptr.generic_space>, i64, i1) -> i64
+__________________ test_accuracy_count_nonzero[dtype2-shape0] __________________
+
+shape = (2, 32), dtype = torch.int16
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e697110>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7c05e0>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e696fb0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype2-shape1] __________________
+
+shape = (32, 32), dtype = torch.int16
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e6d5290>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7a0a40>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e6d4770>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype3-shape0] __________________
+
+shape = (2, 32), dtype = torch.int32
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e111010>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7c1300>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e110df0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype3-shape1] __________________
+
+shape = (32, 32), dtype = torch.int32
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e1d10d0>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7c0900>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e1d0330>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype4-shape0] __________________
+
+shape = (2, 32), dtype = torch.bool
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e602c90>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7a23e0>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e603cb0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+__________________ test_accuracy_count_nonzero[dtype4-shape1] __________________
+
+shape = (32, 32), dtype = torch.bool
+
+    @pytest.mark.count_nonzero
+    @pytest.mark.parametrize("shape", REDUCTION_SHAPES)
+    @pytest.mark.parametrize("dtype", FLOAT_DTYPES + INT_DTYPES + [torch.bool])
+    def test_accuracy_count_nonzero(shape, dtype):
+        if dtype == torch.bool:
+            inp = torch.randint(0, 2, shape, dtype=torch.int, device=flag_gems.device).to(
+                dtype
+            )
+        elif dtype in INT_DTYPES:
+            inp = torch.randint(-3, 3, shape, device=flag_gems.device).to(dtype)
+        else:
+            inp = torch.randn(shape, dtype=dtype, device=flag_gems.device)
+        ref_inp = to_reference(inp, False)
+        dim = random.choice([None] + list(range(inp.ndim)))
+        ref_out = torch.count_nonzero(ref_inp, dim)
+        with flag_gems.use_gems():
+>           res_out = torch.count_nonzero(inp, dim)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_reduction_ops.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../src/flag_gems/ops/count_nonzero.py:104: in count_nonzero
+    count_nonzero_kernel[grid](x, out, shape[dim], numel)
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:410: in <lambda>
+    return lambda *args, **kwargs: self.run(
+../src/flag_gems/utils/libentry.py:242: in run
+    kernel = self.fn.run(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:299: in run
+    ret = self.fn.run(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:823: in run
+    kernel = self._do_compile(
+../../.venv/lib/python3.11/site-packages/triton/runtime/jit.py:1002: in _do_compile
+    kernel = self.compile(src, target=target, options=options.__dict__)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:320: in compile
+    module = src.make_ir(target, options, codegen_fns, module_map, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <triton.compiler.compiler.ASTSource object at 0x7c325e1eb890>
+target = AICPUTarget(backend='cpu', arch='spacemit-a100', warp_size=0, core=8, ai_core=1, arch_id='0xF000', num_threads=1, force_vector_interleave=2)
+options = CPUOptions(debug=False, arch='spacemit-a100', num_warps=8, num_ctas=1, num_stages=3, enable_warp_specialization=False,...ed=False, supported_fp8_dtypes=(), allow_fp8e4nv=False, allowed_dot_input_precisions=('ieee',), sanitize_overflow=True)
+codegen_fns = {'min_dot_size': <function CPUBackend.get_codegen_implementation.<locals>.<lambda> at 0x7c325e7c0220>}
+module_map = {}
+context = <triton._C.libtriton.ir.context object at 0x7c325e1eb5f0>
+
+    def make_ir(self, target: GPUTarget, options, codegen_fns, module_map, context):
+        from .code_generator import ast_to_ttir
+    
+>       return ast_to_ttir(
+            self.fn,
+            self,
+            context=context,
+            options=options,
+            codegen_fns=codegen_fns,
+            module_map=module_map,
+        )
+E       triton.compiler.errors.UnsupportedLanguageConstruct: at 8:15:
+E       def count_nonzero_kernel(x_ptr, out_ptr, N, numel, BLOCK_SIZE: tl.constexpr):
+E           pid_x = tle.program_id(0)
+E       
+E           nonzero_count = tl.full((), value=0, dtype=out_ptr.dtype.element_ty)
+E           for start_n in range(0, N, BLOCK_SIZE):
+E               cols_offsets = start_n + tl.arange(0, BLOCK_SIZE)
+E               offset = pid_x * N + cols_offsets
+E               mask = offset < numel & cols_offsets < N
+E                      ^
+E       simultaneous multiple comparison is not supported
+
+../../.venv/lib/python3.11/site-packages/triton/compiler/compiler.py:87: UnsupportedLanguageConstruct
+=============================== warnings summary ===============================
+../../.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:121
+  /home/zuoweixia/work/tritons/triton-anchor-spacemit/.venv/lib/python3.11/site-packages/triton/runtime/autotuner.py:121: DeprecationWarning: warmup, rep, and use_cuda_graph parameters are deprecated. See https://github.com/triton-lang/triton/pull/4496 for details.
+    warnings.warn(
+
+test_extra_ops.py:37
+  /home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/tests/test_extra_ops.py:37: PytestCollectionWarning: cannot collect test class 'TestCase' because it has a __init__ constructor (from: tests/test_extra_ops.py)
+    @dataclass(frozen=True)
+
+tests/test_reduction_ops.py::test_accuracy_count_nonzero[dtype0-shape0]
+  /home/zuoweixia/work/tritons/triton-anchor-spacemit/.venv/lib/python3.11/site-packages/torch/library.py:505: UserWarning: Warning only once for all operators,  other operators may also be overridden.
+    Overriding a previously registered kernel for the same operator and the same dispatch key
+    operator: aten::add.Tensor(Tensor self, Tensor other, *, Scalar alpha=1) -> Tensor
+      registered at /__w/pytorch/pytorch/build/aten/src/ATen/RegisterSchema.cpp:6
+    dispatch key: CPU
+    previous kernel: registered at /__w/pytorch/pytorch/aten/src/ATen/LegacyBatchingRegistrations.cpp:1076
+         new kernel: registered at /home/zuoweixia/work/tritons/triton-anchor-spacemit/spine-FlagGems/src/flag_gems/__init__.py:241 (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/core/dispatch/OperatorEntry.cpp:208.)
+    self.m.impl(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype0-shape0] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype0-shape1] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype1-shape0] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype1-shape1] - su...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype2-shape0] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype2-shape1] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype3-shape0] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype3-shape1] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype4-shape0] - tr...
+FAILED test_reduction_ops.py::test_accuracy_count_nonzero[dtype4-shape1] - tr...
+=============== 10 failed, 5543 deselected, 3 warnings in 2.16s ================

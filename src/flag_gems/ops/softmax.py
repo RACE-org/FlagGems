@@ -165,13 +165,13 @@ def softmax_kernel_inner(
         offset = pid_m * N + n_offsets
         input_ptrs = input_ptr + offset
         mask = n_offsets < N
-        inp = tl.load(input_ptrs, mask=mask, other=-float("inf")).to(
-            output_ptr.dtype.element_ty
-        )
-        m = tl.max(inp, 0)
-        e = tl.exp(inp - m)
+        inp = tl.load(input_ptrs, mask=mask, other=-float("inf"))
+        # tl.exp requires fp32/fp64, compute in fp32 then cast back
+        inp_f32 = inp.to(tl.float32)
+        m = tl.max(inp_f32, 0)
+        e = tl.exp(inp_f32 - m)
         z = tl.sum(e, 0)
-        out = e / z
+        out = (e / z).to(output_ptr.dtype.element_ty)
         output_ptrs = output_ptr + offset
         tl.store(output_ptrs, out, mask=mask)
     else:
@@ -183,7 +183,7 @@ def softmax_kernel_inner(
         previous_multiple = prev_multiple_of(N, TILE_N)
         for start_n in range(0, previous_multiple, TILE_N):
             n_offsets = start_n + tl.arange(0, TILE_N)
-            inp = tl.load(input_ptr + n_offsets)
+            inp = tl.load(input_ptr + n_offsets).to(tl.float32)
             m_new = tl.maximum(m, inp)
             # it is possible that there are -inf's in the input
             all_neg_inf = m_new == float("-inf")
@@ -193,7 +193,7 @@ def softmax_kernel_inner(
         for start_n in range(previous_multiple, N, TILE_N):
             n_offsets = start_n + tl.arange(0, TILE_N)
             mask = n_offsets < N
-            inp = tl.load(input_ptr + n_offsets, mask=mask, other=-float("inf"))
+            inp = tl.load(input_ptr + n_offsets, mask=mask, other=-float("inf")).to(tl.float32)
             m_new = tl.maximum(m, inp)
             all_neg_inf = m_new == float("-inf")
             z = tl.where(all_neg_inf, z, z * tl.exp(m - m_new) + tl.exp(inp - m_new))
@@ -213,13 +213,13 @@ def softmax_kernel_inner(
                 mask=mask,
                 other=-float("inf"),
                 eviction_policy="evict_first",
-            )
-            o = tl.exp(inp - m) / z
+            ).to(tl.float32)
+            o = (tl.exp(inp - m) / z).to(output_ptr.dtype.element_ty)
             tl.store(output_ptr + n_offsets, o, mask=mask)
         for start_n in range(TILE_N, N, TILE_N):
             n_offsets = (previous_multiple - start_n) + tl.arange(0, TILE_N)
-            inp = tl.load(input_ptr + n_offsets, eviction_policy="evict_first")
-            o = tl.exp(inp - m) / z
+            inp = tl.load(input_ptr + n_offsets, eviction_policy="evict_first").to(tl.float32)
+            o = (tl.exp(inp - m) / z).to(output_ptr.dtype.element_ty)
             tl.store(output_ptr + n_offsets, o)
 
 

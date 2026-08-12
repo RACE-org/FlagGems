@@ -305,7 +305,7 @@ def var_mean(x, dim=None, *, correction=None, keepdim=False):
                     x, acc, average, count, N, NUM_BLOCKS, BLOCK_N, BLOCK_INNER
                 )
                 var_mean_kernel_2[(1,)](
-                    acc, average, count, var, mean, N, correction, BLOCK_NUM, BLOCK_MID
+                    acc, average, count, var, mean, N, correction, BLOCK_NUM
                 )
     else:
         shape = list(x.shape)

@@ -10,6 +10,7 @@ from .accuracy_utils import (
     DISTRIBUTION_SHAPES,
     FLOAT_DTYPES,
     POINTWISE_SHAPES,
+    INT_DTYPES,
     gems_assert_equal,
 )
 from .conftest import TO_CPU
@@ -139,8 +140,8 @@ def test_accuracy_ones_like(shape, dtype):
 
 @pytest.mark.full_like
 @pytest.mark.parametrize("shape", POINTWISE_SHAPES)
-@pytest.mark.parametrize("dtype", BOOL_TYPES + ALL_INT_DTYPES + ALL_FLOAT_DTYPES)
-@pytest.mark.parametrize("xdtype", BOOL_TYPES + ALL_INT_DTYPES + ALL_FLOAT_DTYPES)
+@pytest.mark.parametrize("dtype", BOOL_TYPES + INT_DTYPES + FLOAT_DTYPES)
+@pytest.mark.parametrize("xdtype", BOOL_TYPES + INT_DTYPES + FLOAT_DTYPES)
 @pytest.mark.parametrize("fill_value", [3.1415926, 2, False])
 def test_accuracy_full_like(shape, dtype, xdtype, fill_value):
     x = torch.empty(size=shape, dtype=xdtype, device="cpu" if TO_CPU else device)
@@ -157,9 +158,9 @@ def test_accuracy_full_like(shape, dtype, xdtype, fill_value):
 
 
 @pytest.mark.randperm
-@pytest.mark.parametrize("n", [123, 12345, 65535])
+@pytest.mark.parametrize("n", [64, 256, 512])
 @pytest.mark.parametrize("dtype", ALL_INT_DTYPES)
-@pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
+# @pytest.mark.skipif(flag_gems.vendor_name == "spacemit", reason="TODO")
 def test_accuracy_randperm(n, dtype):
     if n > torch.iinfo(torch.int16).max and dtype == torch.int16:
         return

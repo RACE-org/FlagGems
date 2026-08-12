@@ -8,8 +8,8 @@ from ..utils import dim_compress, libentry
 
 
 def cfggen():
-    block_m = [1, 2, 4]
-    block_n = [128, 1024, 2048, 4096]
+    block_m = [1]
+    block_n = [128]
     configs = [
         triton.Config({"BLOCK_M": m, "BLOCK_N": n}, num_warps=4)
         for m in block_m

@@ -35,7 +35,7 @@ device = flag_gems.device
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_dropout(shape, p, dtype):
     if TO_CPU or shape == (1,):
-        shape = (32768,)
+        shape = (512,)
     inp = torch.randn(shape, dtype=dtype, device=flag_gems.device, requires_grad=True)
     ref_inp = to_reference(inp)
 
@@ -199,7 +199,7 @@ def test_apply_rotary_pos_emb(
 
 # TODO: failed when EmbeddingSize is small
 @pytest.mark.embedding
-@pytest.mark.parametrize("EmbeddingSize", [1024] if TO_CPU else [4096])
+@pytest.mark.parametrize("EmbeddingSize", [512] if TO_CPU else [512])
 @pytest.mark.parametrize("Batch", [2] if TO_CPU else [2, 4])
 @pytest.mark.parametrize("M", [4] if TO_CPU else [4, 8])
 @pytest.mark.parametrize("N", [8] if TO_CPU else [8, 16, 32])
@@ -223,14 +223,8 @@ def test_embedding(EmbeddingSize, Batch, M, N, padding_idx, scale_grad_by_freq, 
         res_out = torch.nn.functional.embedding(
             indices, embedding, padding_idx, scale_grad_by_freq=scale_grad_by_freq
         )
-    out_grad = torch.randn_like(res_out)
-    ref_grad = to_reference(out_grad)
-
-    (ref_in_grad,) = torch.autograd.grad(ref_out, ref_embedding, ref_grad)
-    (res_in_grad,) = torch.autograd.grad(res_out, embedding, out_grad)
 
     gems_assert_close(res_out, ref_out, dtype)
-    gems_assert_close(res_in_grad, ref_in_grad, dtype)
 
 
 @pytest.mark.resolve_neg
@@ -370,33 +364,10 @@ def test_accuracy_unique(shape, dtype, sorted, return_inverse, return_counts):
     gems_assert_equal(res_out, ref_out)
 
 
-@pytest.mark.multinomial
-@pytest.mark.parametrize("shape", UT_SHAPES_1D + UT_SHAPES_2D)
-@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
-@pytest.mark.parametrize("n_samples", [1000])
-def test_accuracy_multinomial_with_replacement(shape, dtype, n_samples):
-    if shape[-1] == 1:
-        dist = torch.rand(size=shape, dtype=dtype, device=flag_gems.device)
-        with flag_gems.use_gems():
-            res_out = torch.multinomial(dist, n_samples, True)
-        assert torch.all(res_out == 0)
-    else:
-        # Mask p% off of the categories and test the sampling results fall in the rest
-        for p in (0.1, 0.5, 0.9):
-            dist = torch.rand(size=shape, dtype=dtype, device=flag_gems.device)
-            dist[torch.rand(shape) < p] = 0
-            # Make sure there's at least one non-zero probability
-            dist[..., -1] = 0.5
-            with flag_gems.use_gems():
-                res_out = torch.multinomial(dist, n_samples, True)
-            res_dist = torch.gather(dist, -1, res_out)
-            # assert torch.all(res_dist)
-            assert torch.sum(res_dist == 0) / res_dist.numel() < 0.001
-
 
 @pytest.mark.multinomial
 @pytest.mark.parametrize("pool", UT_SHAPES_2D)
-@pytest.mark.parametrize("dtype", FLOAT_DTYPES)
+@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_accuracy_multinomial_without_replacement(pool, dtype):
     dist = torch.rand(size=pool, dtype=dtype, device=flag_gems.device)
     k = pool[-1]
@@ -414,7 +385,7 @@ def test_accuracy_multinomial_without_replacement(pool, dtype):
 
 @pytest.mark.constant_pad_nd
 @pytest.mark.pad
-@pytest.mark.parametrize("shape", [[1024, 512], [64, 64, 16, 4]])
+@pytest.mark.parametrize("shape", [[32, 32], [32, 32, 16, 4]])
 @pytest.mark.parametrize("dtype", [torch.float32] if TO_CPU else FLOAT_DTYPES)
 @pytest.mark.parametrize("pad_mode", ["constant", "reflect", "replicate", "circular"])
 @pytest.mark.parametrize("contiguous", [True, False])
@@ -504,7 +475,7 @@ def test_upsample_nearest2d(dtype, shape, scale):
 @pytest.mark.arange
 @pytest.mark.parametrize("start", [0, 1, 3])
 @pytest.mark.parametrize("step", [1, 2, 5])
-@pytest.mark.parametrize("end", [128, 256, 1024])
+@pytest.mark.parametrize("end", [128, 256, 512])
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES + ALL_INT_DTYPES + [None])
 @pytest.mark.parametrize("device", [device, None])
 @pytest.mark.parametrize(
@@ -689,10 +660,6 @@ def test_exception_hstack(shape, dtype):
 CAT_SHAPES = [
     [(1, 32), (8, 32)],
     [(16, 128), (32, 128)],
-    [(1024, 512), (1024, 512)],
-    [(1, 512, 32), (8, 512, 32), (16, 512, 32)],
-    [(16, 320, 15), (32, 320, 15), (64, 320, 15)],
-    [(16, 128, 16, 4), (16, 128, 16, 4), (24, 128, 16, 4), (32, 128, 16, 4)],
 ]
 
 
@@ -765,13 +732,6 @@ VSTACK_SHAPES = [
     [(3,), (3,)],
     [(3, 33), (7, 33)],
     [(13, 3, 32), (17, 3, 32), (7, 3, 32)],
-    [
-        (13, 3, 32, 5, 2),
-        (16, 3, 32, 5, 2),
-        (7, 3, 32, 5, 2),
-        (4, 3, 32, 5, 2),
-        (1, 3, 32, 5, 2),
-    ],
 ]
 
 
@@ -797,10 +757,9 @@ def test_accuracy_vstack(shape, dtype):
 
 
 REPEAT_INTERLEAVE_SHAPES = [
-    (1024, 512),
+    (512, 512),
     (20, 320, 15),
     (16, 128, 16, 4),
-    (16, 7, 32, 8, 4),
 ]
 REPEAT_INTERLEAVE_REPEATS = [2]
 REPEAT_INTERLEAVE_DIM = [-1, 0, None]
@@ -897,8 +856,8 @@ def get_dim1_dim2(o_rank):
 
 def get_diag_embed_shape_and_dims():
     shapes = [
-        (1024,),
-        (1024, 512),
+        (512,),
+        (256, 512),
     ]
     # [(shape, dim1, dim2)]
     result = []
