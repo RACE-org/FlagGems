@@ -5,6 +5,7 @@ import triton
 import triton.language as tl
 
 from flag_gems import runtime
+from flag_gems.ops.div import floor_divide as _general_floor_divide
 from flag_gems.utils import libentry
 from flag_gems.utils import libtuner
 
@@ -62,12 +63,12 @@ def div_kernel_tt(
             order=(0,),
         )
 
+        out_elem_ty = Out_ptr.type.element_ty
         a = tl.load(a_blk, boundary_check=(0,))
-        a_dtype = a.dtype
         a = a.to(tl.float32)
         b = tl.load(b_blk, boundary_check=(0,)).to(tl.float32)
         out = a / b
-        tl.store(out_blk, out.to(a_dtype), boundary_check=(0,))
+        tl.store(out_blk, out.to(out_elem_ty), boundary_check=(0,))
 
 
 @libentry()
@@ -111,11 +112,11 @@ def div_kernel_ts(
             order=(0,),
         )
 
+        out_elem_ty = Out_ptr.type.element_ty
         a = tl.load(a_blk, boundary_check=(0,))
-        a_dtype = a.dtype
         a = a.to(tl.float32)
         out = a / scalar
-        tl.store(out_blk, out.to(a_dtype), boundary_check=(0,))
+        tl.store(out_blk, out.to(out_elem_ty), boundary_check=(0,))
 
 
 @libentry()
@@ -159,11 +160,11 @@ def div_kernel_st(
             order=(0,),
         )
 
+        out_elem_ty = Out_ptr.type.element_ty
         b = tl.load(b_blk, boundary_check=(0,))
-        b_dtype = b.dtype
         b = b.to(tl.float32)
         out = scalar / b
-        tl.store(out_blk, out.to(b_dtype), boundary_check=(0,))
+        tl.store(out_blk, out.to(out_elem_ty), boundary_check=(0,))
 
 
 def true_divide(A, B):
@@ -207,8 +208,16 @@ def true_divide_(A, B):
     return A
 
 
+def _is_int(x):
+    if isinstance(x, torch.Tensor):
+        return not x.is_floating_point()
+    return isinstance(x, int)
+
+
 def floor_divide(A, B):
     logger.debug("GEMS_SPACEMIT FLOOR_DIVIDE")
+    if _is_int(A) and _is_int(B):
+        return _general_floor_divide(A, B)
     result = true_divide(A, B)
     if isinstance(A, torch.Tensor):
         out_dtype = A.dtype
