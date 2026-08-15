@@ -42,9 +42,9 @@ BlasBenchmark:
 # The default number of groups (num_groups) for GroupNorm is set to channels // 2
 NormBenchmark:
   shapes:
-    - [4, 16, 16, 4]
-    - [16, 16, 32]
-    - [20, 6, 32]
+    - [4, 4, 4, 2048]
+    - [4, 4, 2048]
+    - [4, 8, 2048]
   shape_desc: "N, C, *"
 
 
@@ -104,8 +104,8 @@ GenericBenchmark2DOnly:
 UnaryReductionBenchmark:
   shapes:
     - [4096,]
-    - [64, 256]
-    - [64, 64, 512]
+    - [16, 2048]
+    - [4, 4, 2048]
 
 UnaryPointwiseBenchmark:
   shapes:

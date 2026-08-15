@@ -18,7 +18,7 @@ SUB_BLOCK_SIZE = 128
 
 @libentry()
 @triton.jit
-def ones_kernel(
+def zeros_kernel(
     output_ptr,
     n_elements,
     BLOCK_SIZE: tl.constexpr,
@@ -30,7 +30,7 @@ def ones_kernel(
     fill_dtype = output_ptr.dtype.element_ty
     if fill_dtype == tl.int1:
         fill_dtype = tl.int8
-    value = tl.full((SUB_BLOCK_SIZE,), 1, dtype=fill_dtype)
+    value = tl.full((SUB_BLOCK_SIZE,), 0, dtype=fill_dtype)
 
     for sub_offset in range(0, BLOCK_SIZE, SUB_BLOCK_SIZE):
         offsets = block_start + sub_offset + tl.arange(0, SUB_BLOCK_SIZE)
@@ -38,8 +38,8 @@ def ones_kernel(
         tl.store(output_ptr + offsets, value, mask=mask)
 
 
-def ones(size, *, dtype=None, layout=None, device=None, pin_memory=None):
-    logger.debug("GEMS_SPACEMIT ONES")
+def zeros(size, *, dtype=None, layout=None, device=None, pin_memory=None):
+    logger.debug("GEMS_SPACEMIT ZEROS")
     if dtype is None:
         dtype = torch.get_default_dtype()
     if device is None:
@@ -49,5 +49,5 @@ def ones(size, *, dtype=None, layout=None, device=None, pin_memory=None):
     N = volume(size)
     grid = (triton.cdiv(N, BLOCK_SIZE),)
     with torch_device_fn.device(device):
-        ones_kernel[grid](out, N, BLOCK_SIZE, SUB_BLOCK_SIZE)
+        zeros_kernel[grid](out, N, BLOCK_SIZE, SUB_BLOCK_SIZE)
     return out

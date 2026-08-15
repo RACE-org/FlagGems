@@ -66,6 +66,9 @@ def triu_kernel(
             tl.store(y_block_ptr, y, boundary_check=(0, 1))
 
 
+NUM_CTAS = 8
+
+
 @libentry()
 @triton.autotune(
     configs=runtime.get_tuned_config("triu_batch_spacemit"),
@@ -83,15 +86,17 @@ def triu_batch_kernel(
     M_BLOCK_SIZE: tl.constexpr,
     N_BLOCK_SIZE: tl.constexpr,
 ):
-    batch_id = tl.program_id(0)
+    pid_batch = tl.program_id(0)
     row_block_id = tl.program_id(1)
     col_block_id = tl.program_id(2)
+    num_ctas = tl.num_programs(0)
 
-    batch_start = batch_id * BATCH_BLOCK_SIZE
+    num_batch_blocks = tl.cdiv(batch, BATCH_BLOCK_SIZE)
+    sub_num = tl.cdiv(tl.maximum(num_batch_blocks - pid_batch, 0), num_ctas)
+
     row_start = row_block_id * M_BLOCK_SIZE
     col_start = col_block_id * N_BLOCK_SIZE
 
-    batch_offsets = tl.arange(0, BATCH_BLOCK_SIZE) + batch_start
     row_offsets = tl.arange(0, M_BLOCK_SIZE) + row_start
     col_offsets = tl.arange(0, N_BLOCK_SIZE) + col_start
 
@@ -100,30 +105,33 @@ def triu_batch_kernel(
     block_col_min = col_start
     block_col_max = col_start + N_BLOCK_SIZE - 1
 
-    base_offsets = batch_offsets[:, None, None] * (M * N)
-    row_offsets_3d = row_offsets[None, :, None] * N
-    col_offsets_3d = col_offsets[None, None, :]
-    offsets = base_offsets + row_offsets_3d + col_offsets_3d
-
-    batch_mask = batch_offsets < batch
     row_mask = row_offsets < M
     col_mask = col_offsets < N
-    valid_mask = batch_mask[:, None, None] & row_mask[None, :, None] & col_mask[None, None, :]
 
-    if block_row_max + diagonal <= block_col_min:
-        x = tl.load(X + offsets, mask=valid_mask, other=0.0)
-        tl.store(Y + offsets, x, mask=valid_mask)
-        return
+    for block_idx in tl.range(0, sub_num):
+        batch_block_idx = pid_batch + num_ctas * block_idx
+        batch_start = batch_block_idx * BATCH_BLOCK_SIZE
+        batch_offsets = tl.arange(0, BATCH_BLOCK_SIZE) + batch_start
 
-    if block_row_min + diagonal > block_col_max:
-        zeros = tl.zeros((BATCH_BLOCK_SIZE, M_BLOCK_SIZE, N_BLOCK_SIZE), dtype=tl.int1)
-        tl.store(Y + offsets, zeros, mask=valid_mask)
-        return
+        batch_mask = batch_offsets < batch
+        valid_mask = batch_mask[:, None, None] & row_mask[None, :, None] & col_mask[None, None, :]
 
-    x = tl.load(X + offsets, mask=valid_mask, other=0.0)
-    triu_mask = row_offsets[None, :, None] + diagonal <= col_offsets[None, None, :]
-    y = tl.where(triu_mask, x, 0.0)
-    tl.store(Y + offsets, y, mask=valid_mask)
+        base_offsets = batch_offsets[:, None, None] * (M * N)
+        row_offsets_3d = row_offsets[None, :, None] * N
+        col_offsets_3d = col_offsets[None, None, :]
+        offsets = base_offsets + row_offsets_3d + col_offsets_3d
+        offsets = tl.where(valid_mask, offsets, 0)
+
+        if block_row_max + diagonal <= block_col_min:
+            x = tl.load(X + offsets, mask=valid_mask, other=0.0)
+            tl.store(Y + offsets, x, mask=valid_mask)
+        elif block_row_min + diagonal > block_col_max:
+            tl.store(Y + offsets, 0.0, mask=valid_mask)
+        else:
+            x = tl.load(X + offsets, mask=valid_mask, other=0.0)
+            triu_mask = row_offsets[None, :, None] + diagonal <= col_offsets[None, None, :]
+            y = tl.where(triu_mask, x, 0.0)
+            tl.store(Y + offsets, y, mask=valid_mask)
 
 
 def triu(A, diagonal=0):
@@ -147,7 +155,7 @@ def triu(A, diagonal=0):
             B = A.view(-1)
             out_view = out.view(-1)
             grid = lambda meta: (
-                triton.cdiv(batch, meta["BATCH_BLOCK_SIZE"]),
+                min(NUM_CTAS, triton.cdiv(batch, meta["BATCH_BLOCK_SIZE"])),
                 triton.cdiv(M, meta["M_BLOCK_SIZE"]),
                 triton.cdiv(N, meta["N_BLOCK_SIZE"]),
             )
