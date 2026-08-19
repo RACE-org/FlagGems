@@ -31,6 +31,8 @@ def layer_norm_common_kernel(
     num_ctas = tl.num_programs(0)
     sub_num = tl.cdiv(max(M - pid, 0), num_ctas)
 
+    element_ty = X.dtype.element_ty
+
     # Persistent row scheduling like mv: each CTA handles multiple rows.
     for block_idx in tl.range(0, sub_num):
         row = pid + num_ctas * block_idx
@@ -39,20 +41,12 @@ def layer_norm_common_kernel(
 
         mean_acc = tl.zeros([TILE_N], dtype=tl.float32)
         var_acc = tl.zeros([TILE_N], dtype=tl.float32)
-        num_pid_n = tl.cdiv(N, TILE_N)
-        x_ptr_desc = tl.make_block_ptr(
-            base=X_row,
-            shape=[N],
-            strides=[1],
-            offsets=[0],
-            block_shape=[TILE_N],
-            order=[0],
-        )
-        for _ in range(0, num_pid_n):
-            a = tl.load(x_ptr_desc, boundary_check=[0]).to(tl.float32)
+        for off in range(0, N, TILE_N):
+            cols = off + tl.arange(0, TILE_N)
+            mask = cols < N
+            a = tl.load(X_row + cols, mask=mask, other=0.0).to(tl.float32)
             mean_acc += a
             var_acc += a * a
-            x_ptr_desc = tl.advance(x_ptr_desc, [TILE_N])
 
         mean = tl.sum(mean_acc) / N
         var = tl.sum(var_acc) / N - (mean * mean)
@@ -60,63 +54,22 @@ def layer_norm_common_kernel(
         tl.store(Mean + row, mean)
         tl.store(Rstd + row, rstd)
 
-        x_ptr_desc = tl.make_block_ptr(
-            base=X_row,
-            shape=[N],
-            strides=[1],
-            offsets=[0],
-            block_shape=[TILE_N],
-            order=[0],
-        )
-
-        if W is not None:
-            weight_ptr_desc = tl.make_block_ptr(
-                base=W,
-                shape=[N],
-                strides=[1],
-                offsets=[0],
-                block_shape=[TILE_N],
-                order=[0],
-            )
-
-        if B is not None:
-            bias_ptr_desc = tl.make_block_ptr(
-                base=B,
-                shape=[N],
-                strides=[1],
-                offsets=[0],
-                block_shape=[TILE_N],
-                order=[0],
-            )
-        y_ptr_desc = tl.make_block_ptr(
-            base=Y_row,
-            shape=[N],
-            strides=[1],
-            offsets=[0],
-            block_shape=[TILE_N],
-            order=[0],
-        )
-
-        for _ in range(0, num_pid_n):
-            a = tl.load(x_ptr_desc, boundary_check=[0])
-            x_hat = (a - mean) * rstd
-            x_ptr_desc = tl.advance(x_ptr_desc, [TILE_N])
+        for off in range(0, N, TILE_N):
+            cols = off + tl.arange(0, TILE_N)
+            mask = cols < N
+            a = tl.load(X_row + cols, mask=mask, other=0.0)
+            x_hat = (a.to(tl.float32) - mean) * rstd
 
             if W is None:
                 w = 1
             else:
-                w = tl.load(weight_ptr_desc, boundary_check=[0])
-                weight_ptr_desc = tl.advance(weight_ptr_desc, [TILE_N])
-
+                w = tl.load(W + cols, mask=mask, other=0.0).to(tl.float32)
             if B is None:
                 b = 0
             else:
-                b = tl.load(bias_ptr_desc, boundary_check=[0])
-                bias_ptr_desc = tl.advance(bias_ptr_desc, [TILE_N])
-
+                b = tl.load(B + cols, mask=mask, other=0.0).to(tl.float32)
             y = x_hat * w + b
-            tl.store(y_ptr_desc, y.to(y_ptr_desc.dtype.element_ty), boundary_check=[0])
-            y_ptr_desc = tl.advance(y_ptr_desc, [TILE_N])
+            tl.store(Y_row + cols, y.to(element_ty), mask=mask)
 
 
 @libentry()

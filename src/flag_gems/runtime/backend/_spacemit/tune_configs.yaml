@@ -50,8 +50,8 @@ bmm:
   num_stages: 2
 argmax:
 - META:
-    BLOCK_M: 32
-    BLOCK_N: 32
+    BLOCK_M: 4
+    BLOCK_N: 1024
 argmin:
 - META:
     BLOCK_M: 8
@@ -212,7 +212,7 @@ mean_spacemit_v1:
       BLOCK_M: block_m
       BLOCK_N: block_n
   block_m:
-  - 1
+  - 4
   block_n:
   - 256
 mean:
@@ -356,7 +356,7 @@ triu:
   block_m:
   - 1
   block_n:
-  - 1
+  - 2048
 triu_batch_spacemit:
 - gen: true
   param_map:
@@ -369,7 +369,7 @@ triu_batch_spacemit:
   block_m:
   - 1
   block_n:
-  - 1
+  - 32
 triu_batch:
 - gen: true
   param_map:
@@ -425,7 +425,7 @@ var_mean:
       BLOCK_M: block_m
       BLOCK_N: block_n
   block_m:
-  - 1
+  - 4
   block_n:
   - 512
 conv2d_forward:
@@ -637,6 +637,41 @@ div_tensor_scalar:
   block_size:
   - 512
 div_scalar_tensor:
+- gen: true
+  param_map:
+    META:
+      BLOCK_SIZE: block_size
+  block_size:
+  - 512
+isclose:
+- gen: true
+  param_map:
+    META:
+      BLOCK_SIZE: block_size
+  block_size:
+  - 512
+maximum:
+- gen: true
+  param_map:
+    META:
+      BLOCK_SIZE: block_size
+  block_size:
+  - 512
+minimum:
+- gen: true
+  param_map:
+    META:
+      BLOCK_SIZE: block_size
+  block_size:
+  - 512
+ne_tensor_tensor:
+- gen: true
+  param_map:
+    META:
+      BLOCK_SIZE: block_size
+  block_size:
+  - 512
+ne_tensor_scalar:
 - gen: true
   param_map:
     META:

@@ -29,34 +29,21 @@ def l2_norm_kernel(X, Out, M, N, BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr):
 
     for block_idx in range(sub_num):
         task_idx = pid + num_ctas * block_idx
+        row = task_idx * BLOCK_M + tl.arange(0, BLOCK_M)[:, None]
+        X_row = X + row * N
+        Out_row = Out + row
+        row_mask = row < M
 
-        X_block_ptr = tl.make_block_ptr(
-            base=X,
-            shape=[M, N],
-            strides=[N, 1],
-            offsets=[task_idx * BLOCK_M, 0],
-            block_shape=[BLOCK_M, BLOCK_N],
-            order=[1, 0],
-        )
-        Out_block_ptr = tl.make_block_ptr(
-            base=Out,
-            shape=(M, 1),
-            strides=(1, 1),
-            offsets=(task_idx * BLOCK_M, 0),
-            block_shape=(BLOCK_M, 1),
-            order=(1, 0),
-        )
-
-        x_dtype = X_block_ptr.dtype.element_ty
         _sum = tl.zeros([BLOCK_M, BLOCK_N], dtype=tl.float32)
         for off in range(0, N, BLOCK_N):
-            a = tl.load(X_block_ptr, boundary_check=(0, 1))
-            a = a.to(tl.float32)
-            X_block_ptr = tl.advance(X_block_ptr, (0, BLOCK_N))
+            cols = off + tl.arange(0, BLOCK_N)[None, :]
+            col_mask = cols < N
+            mask = row_mask & col_mask
+            a = tl.load(X_row + cols, mask, other=0.0).to(tl.float32)
             _sum += a * a
         sum = tl.sum(_sum, axis=1)
         out = tl.sqrt(sum)[:, None]
-        tl.store(Out_block_ptr, out.to(x_dtype), boundary_check=(0, 1))
+        tl.store(Out_row, out, row_mask)
 
 
 # ---- L2 norm (global, two-pass) ----

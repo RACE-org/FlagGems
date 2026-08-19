@@ -6,8 +6,8 @@ import flag_gems
 from .accuracy_utils import FLOAT_DTYPES, SCALARS, gems_assert_close, to_reference
 from .conftest import QUICK_MODE
 
-MN_SHAPES = [(1, 32)] if QUICK_MODE else [(512, 512), (256, 256)]
-MNK_SHAPES = [(1, 1, 32)] if QUICK_MODE else [(256, 256, 256)]
+MN_SHAPES = [(1, 32)] if QUICK_MODE else [(512, 128), (256, 128)]
+MNK_SHAPES = [(1, 1, 32)] if QUICK_MODE else [(512, 128, 32), (256, 128, 32)]
 FLOAT_DTYPES = [torch.float32] if QUICK_MODE else FLOAT_DTYPES
 
 

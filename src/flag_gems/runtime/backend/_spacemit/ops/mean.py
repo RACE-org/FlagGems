@@ -1,13 +1,31 @@
 import logging
+import builtins
 
 import torch
 import triton
 import triton.language as tl
+import triton.language.extra.smt as smt
 
 from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
-from flag_gems.utils import dim_compress, libentry
+from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
+
+import os
+
+try:
+    from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
+except ImportError:
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+if os.environ.get("SPINE_TRITON_RPC_HOST"):
+    alloc_mbarrier = None
+    release_mbarrier = None
+
+logger = logging.getLogger(__name__)
+
+NUM_CTAS = 8
 
 
 @libentry()
@@ -16,110 +34,136 @@ def mean_kernel_1(
     inp,
     mid,
     M,
+    NUM_BLOCKS,
     BLOCK_SIZE: tl.constexpr,
+    BLOCK_INNER: tl.constexpr,
 ):
-    # Vectorized load with block_ptr for better spine-triton codegen
-    pid = tle.program_id(0)
-    offset_start = (pid * BLOCK_SIZE).to(tl.int32)
+    pid = tl.program_id(0)
+    num_ctas = tl.num_programs(0)
+    sub_num = tl.cdiv(tl.maximum(NUM_BLOCKS - pid, 0), num_ctas)
+    dtype = inp.type.element_ty
+    sum_val = tl.zeros((), dtype=tl.float32)
 
-    inp_ptr = tl.make_block_ptr(
-        base=inp,
-        shape=[M],
-        strides=[1],
-        offsets=[offset_start],
-        block_shape=[BLOCK_SIZE],
-        order=[0],
-    )
+    for block_idx in tl.range(0, sub_num):
+        task_idx = pid + num_ctas * block_idx
+        n_start = task_idx * BLOCK_SIZE
+        n_end = tl.minimum(n_start + BLOCK_SIZE, M)
 
-    v = tl.load(inp_ptr, boundary_check=[0], padding_option="zero").to(tl.float32)
-    sum_val = tl.sum(v, axis=0)
+        for ni in range(n_start, n_end, BLOCK_INNER):
+            offset = ni + tl.arange(0, BLOCK_INNER)
+            mask = offset < M
+            inp_val = tl.load(inp + offset, mask=mask, other=0.0).to(tl.float32)
+            sum_val += tl.sum(inp_val)
+
     tl.store(mid + pid, sum_val)
 
 
 @libentry()
 @triton.jit
 def mean_kernel_2(mid, out, M, MID_SIZE, BLOCK_MID: tl.constexpr):
-    mid_ptr = tl.make_block_ptr(
-        base=mid,
-        shape=[MID_SIZE],
-        strides=[1],
-        offsets=[0],
-        block_shape=[BLOCK_MID],
-        order=[0],
-    )
-    mid_val = tl.load(mid_ptr, boundary_check=[0], padding_option="zero").to(tl.float32)
+    offset = tl.arange(0, BLOCK_MID)
+    mask = offset < MID_SIZE
+    mid_val = tl.load(mid + offset, mask=mask, other=0.0).to(tl.float32)
     sum_val = tl.sum(mid_val, axis=0) / M
     tl.store(out, sum_val.to(out.dtype.element_ty))
 
 
+@libentry()
+@triton.jit
+def mean_kernel_barrier(
+    inp,
+    mid,
+    out,
+    bar,
+    M,
+    NUM_BLOCKS,
+    BLOCK_SIZE: tl.constexpr,
+    BLOCK_INNER: tl.constexpr,
+    BLOCK_MID: tl.constexpr,
+):
+    pid = tl.program_id(0)
+    num_ctas = tl.num_programs(0)
+    sub_num = tl.cdiv(tl.maximum(NUM_BLOCKS - pid, 0), num_ctas)
+    sum_val = tl.zeros((), dtype=tl.float32)
+
+    for block_idx in tl.range(0, sub_num):
+        task_idx = pid + num_ctas * block_idx
+        n_start = task_idx * BLOCK_SIZE
+        n_end = tl.minimum(n_start + BLOCK_SIZE, M)
+
+        for ni in range(n_start, n_end, BLOCK_INNER):
+            offset = ni + tl.arange(0, BLOCK_INNER)
+            mask = offset < M
+            inp_val = tl.load(inp + offset, mask=mask, other=0.0).to(tl.float32)
+            sum_val += tl.sum(inp_val)
+
+    tl.store(mid + pid, sum_val)
+    smt.barrier_arrive(bar)
+
+    if pid == tl.num_programs(0) - 1:
+        smt.barrier_wait(bar, flag=1)
+        offset = tl.arange(0, BLOCK_MID)
+        mask = offset < tl.num_programs(0)
+        mid_val = tl.load(mid + offset, mask=mask, other=0.0).to(tl.float32)
+        final_sum = tl.sum(mid_val, axis=0) / M
+        tl.store(out, final_sum.to(out.dtype.element_ty))
+
+
 def mean(inp, *, dtype=None):
-    logging.debug("GEMS_SPACEMIT MEAN")
+    logger.debug("GEMS_SPACEMIT MEAN")
     M = inp.numel()
     if dtype is None:
         dtype = inp.dtype
 
-    # Use gems' standard two-stage design: many programs * BLOCK_SIZE each
-    # Gems baseline strategy: block_size = sqrt(M), mid_size programs
-    import math
-    block_size = triton.next_power_of_2(math.ceil(math.sqrt(M)))
-    mid_size = triton.cdiv(M, block_size)
+    block_size = builtins.min(4096, triton.next_power_of_2(M))
+    block_inner = 256
+    num_blocks = triton.cdiv(M, block_size)
+    mid_size = min(NUM_CTAS, num_blocks)
     block_mid = triton.next_power_of_2(mid_size)
 
     mid = torch.empty((mid_size,), dtype=torch.float32, device=inp.device)
     out = torch.empty([], dtype=dtype, device=inp.device)
 
     with torch_device_fn.device(inp.device):
-        # Stage 1: parallel reduction across mid_size programs
-        mean_kernel_1[(mid_size, 1, 1)](inp, mid, M, block_size)
-        # Stage 2: final reduction in single program (fully on device)
-        mean_kernel_2[(1, 1, 1)](mid, out, M, mid_size, block_mid)
+        if alloc_mbarrier is not None and release_mbarrier is not None and mid_size <= 32767:
+            bar = alloc_mbarrier(mid_size)
+            try:
+                mean_kernel_barrier[(mid_size,)](
+                    inp, mid, out, bar, M, num_blocks, block_size, block_inner, block_mid
+                )
+            finally:
+                release_mbarrier(bar)
+        else:
+            mean_kernel_1[(mid_size,)](inp, mid, M, num_blocks, block_size, block_inner)
+            mean_kernel_2[(1, 1)](mid, out, M, mid_size, block_mid)
     return out
 
 
 @libentry()
-@triton.autotune(
+@libtuner(
     configs=runtime.get_tuned_config("mean_spacemit_v1"),
     key=["M", "N"],
 )
 @triton.jit
 def mean_dim_kernel(X, Mean, M, N, BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr):
-    row_start = tl.program_id(0) * BLOCK_M
-    row_offset = tl.arange(0, BLOCK_M)
-    row_idx = row_start + row_offset
-    row_mask = row_idx < M
+    pid_m = tle.program_id(0)
+    m_offset = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    row_mask = m_offset < M
 
     _mean_acc = tl.zeros([BLOCK_M, BLOCK_N], dtype=tl.float32)
-    num_pid_n = tl.cdiv(N, BLOCK_N)
-
-    x_ptr_desc = tl.make_block_ptr(
-        base=X,
-        shape=[M, N],
-        strides=[N, 1],
-        offsets=[row_start, 0],
-        block_shape=[BLOCK_M, BLOCK_N],
-        order=[1, 0],
-    )
-
-    for off_n in range(0, num_pid_n):
-        a = tl.load(x_ptr_desc, boundary_check=[0, 1]).to(tl.float32)
+    for off in range(0, N, BLOCK_N):
+        cols = off + tl.arange(0, BLOCK_N)
+        offset = m_offset[:, None] * N + cols[None, :]
+        mask = row_mask[:, None] & (cols[None, :] < N)
+        a = tl.load(X + offset, mask=mask, other=0.0).to(tl.float32)
         _mean_acc += a
-        x_ptr_desc = tl.advance(x_ptr_desc, [0, BLOCK_N])
 
     mean = tl.sum(_mean_acc, axis=1) / N
-
-    mean_ptr_desc = tl.make_block_ptr(
-        base=Mean,
-        shape=[M],
-        strides=[1],
-        offsets=[row_start],
-        block_shape=[BLOCK_M],
-        order=[0],
-    )
-    tl.store(mean_ptr_desc, mean.to(Mean.dtype.element_ty), boundary_check=[0])
+    tl.store(Mean + m_offset, mean.to(Mean.dtype.element_ty), mask=row_mask)
 
 
 def mean_dim(x, dim, keepdim=False, *, dtype=None):
-    logging.debug("GEMS_SPACEMIT MEAN_DIM")
+    logger.debug("GEMS_SPACEMIT MEAN_DIM")
 
     if dtype is None:
         dtype = x.dtype

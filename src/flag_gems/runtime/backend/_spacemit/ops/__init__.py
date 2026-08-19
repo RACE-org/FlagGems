@@ -103,6 +103,7 @@ from .unfold import unfold
 from .var_mean import var_mean
 from .vector_norm import vector_norm
 from .where import where_scalar_other, where_scalar_self, where_self, where_self_out
+from .isclose import isclose, allclose
 
 __all__ = [
     "abs",
@@ -248,4 +249,6 @@ __all__ = [
     "where_scalar_self",
     "where_self",
     "where_self_out",
+    "isclose",
+    "allclose"
 ]

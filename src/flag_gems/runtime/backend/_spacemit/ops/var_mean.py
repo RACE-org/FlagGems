@@ -4,24 +4,11 @@ import builtins
 import torch
 import triton
 import triton.language as tl
-import triton.language.extra.smt as smt
 
 from flag_gems import runtime
 from flag_gems.runtime import torch_device_fn
-from flag_gems.utils import dim_compress, libentry
+from flag_gems.utils import dim_compress, libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
-
-import os
-
-try:
-    from triton.backends.spine_triton.env import alloc_mbarrier, release_mbarrier
-except ImportError:
-    alloc_mbarrier = None
-    release_mbarrier = None
-
-if os.environ.get("SPINE_TRITON_RPC_HOST"):
-    alloc_mbarrier = None
-    release_mbarrier = None
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +28,7 @@ def welford_func(mean_x, count_x, M_x, mean_y, count_y, M_y):
 
 
 @libentry()
-@triton.autotune(configs=runtime.get_tuned_config("var_mean"), key=["M", "N"])
+@libtuner(configs=runtime.get_tuned_config("var_mean"), key=["M", "N"])
 @triton.jit(do_not_specialize=["correction"])
 def var_mean_welford_kernel(
     X,
@@ -58,31 +45,6 @@ def var_mean_welford_kernel(
     rows = pid * BLOCK_M + tl.arange(0, BLOCK_M)[:, None]
     row_mask = rows < M
 
-    X_block_ptr = tl.make_block_ptr(
-        base=X,
-        shape=(M, N),
-        strides=(N, 1),
-        offsets=(pid * BLOCK_M, 0),
-        block_shape=(BLOCK_M, BLOCK_N),
-        order=(1, 0),
-    )
-    var_block_ptr = tl.make_block_ptr(
-        base=Var,
-        shape=(M, 1),
-        strides=(1, 1),
-        offsets=(pid * BLOCK_M, 0),
-        block_shape=(BLOCK_M, 1),
-        order=(1, 0),
-    )
-    mean_block_ptr = tl.make_block_ptr(
-        base=Mean,
-        shape=(M, 1),
-        strides=(1, 1),
-        offsets=(pid * BLOCK_M, 0),
-        block_shape=(BLOCK_M, 1),
-        order=(1, 0),
-    )
-
     dtype = X.dtype.element_ty
 
     _mean = tl.zeros((BLOCK_M, BLOCK_N), dtype=dtype)
@@ -95,9 +57,8 @@ def var_mean_welford_kernel(
         mask = row_mask & col_mask
         mask_t = mask.to(dtype)
 
-        x = tl.load(X_block_ptr, boundary_check=(0, 1)).to(dtype)
-        X_block_ptr = tl.advance(X_block_ptr, (0, BLOCK_N))
-
+        offset = rows * N + cols
+        x = tl.load(X + offset, mask=mask, other=0.0).to(dtype)
         x = x * mask_t
 
         count = _count + mask_t
@@ -114,8 +75,8 @@ def var_mean_welford_kernel(
     mean = mean[:, None]
     var = var[:, None]
 
-    tl.store(mean_block_ptr, mean, boundary_check=(0, 1))
-    tl.store(var_block_ptr, var, boundary_check=(0, 1))
+    tl.store(Mean + rows, mean, mask=row_mask)
+    tl.store(Var + rows, var, mask=row_mask)
 
 
 @libentry()
@@ -158,67 +119,6 @@ def var_mean_kernel_1(
     tl.store(Average + pid, average)
     tl.store(Acc + pid, acc)
     tl.store(Count + pid, count)
-
-
-@libentry()
-@triton.jit(do_not_specialize=["correction"])
-def var_mean_kernel_barrier(
-    X,
-    Acc,
-    Average,
-    Count,
-    Var,
-    Mean,
-    bar,
-    N,
-    correction,
-    NUM_BLOCKS,
-    BLOCK_N: tl.constexpr,
-    BLOCK_INNER: tl.constexpr,
-    BLOCK_MID: tl.constexpr,
-):
-    pid = tl.program_id(0)
-    num_ctas = tl.num_programs(0)
-    sub_num = tl.cdiv(tl.maximum(NUM_BLOCKS - pid, 0), num_ctas)
-    dtype = X.dtype.element_ty
-    count = tl.zeros((), dtype=dtype)
-    sum_val = tl.zeros((), dtype=dtype)
-    sum_square = tl.zeros((), dtype=dtype)
-
-    for block_idx in tl.range(0, sub_num):
-        task_idx = pid + num_ctas * block_idx
-        n_start = task_idx * BLOCK_N
-        n_end = tl.minimum(n_start + BLOCK_N, N)
-
-        for ni in range(n_start, n_end, BLOCK_INNER):
-            offset = ni + tl.arange(0, BLOCK_INNER)
-            mask = offset < N
-            x = tl.load(X + offset, mask=mask, other=0.0).to(dtype)
-            sum_val += tl.sum(x)
-            sum_square += tl.sum(x * x)
-            count += tl.sum(mask.to(dtype))
-
-    safe_count = tl.maximum(count, tl.full((), 1, dtype))
-    average = sum_val / safe_count
-    acc = sum_square - count * average * average
-    tl.store(Average + pid, average)
-    tl.store(Acc + pid, acc)
-    tl.store(Count + pid, count)
-    smt.barrier_arrive(bar)
-
-    if pid == tl.num_programs(0) - 1:
-        smt.barrier_wait(bar, flag=1)
-        offset = tl.arange(0, BLOCK_MID)
-        mask = offset < tl.num_programs(0)
-        zero = tl.full(offset.shape, 0, dtype)
-        acc = tl.load(Acc + offset, mask=mask, other=zero).to(dtype)
-        average = tl.load(Average + offset, mask=mask, other=zero).to(dtype)
-        count = tl.load(Count + offset, mask=mask, other=zero).to(dtype)
-
-        mean, _, nvar = tl.reduce((average, count, acc), axis=0, combine_fn=welford_func)
-        var = nvar / (N - correction)
-        tl.store(Mean, mean)
-        tl.store(Var, var)
 
 
 @libentry()
@@ -280,33 +180,12 @@ def var_mean(x, dim=None, *, correction=None, keepdim=False):
         count = torch.empty((BLOCK_NUM,), dtype=x.dtype, device=x.device)
 
         with torch_device_fn.device(x.device):
-            if alloc_mbarrier is not None and release_mbarrier is not None and BLOCK_NUM <= 32767:
-                bar = alloc_mbarrier(BLOCK_NUM)
-                try:
-                    var_mean_kernel_barrier[(BLOCK_NUM,)](
-                        x,
-                        acc,
-                        average,
-                        count,
-                        var,
-                        mean,
-                        bar,
-                        N,
-                        correction,
-                        NUM_BLOCKS,
-                        BLOCK_N,
-                        BLOCK_INNER,
-                        BLOCK_MID,
-                    )
-                finally:
-                    release_mbarrier(bar)
-            else:
-                var_mean_kernel_1[(BLOCK_NUM,)](
-                    x, acc, average, count, N, NUM_BLOCKS, BLOCK_N, BLOCK_INNER
-                )
-                var_mean_kernel_2[(1,)](
-                    acc, average, count, var, mean, N, correction, BLOCK_NUM
-                )
+            var_mean_kernel_1[(BLOCK_NUM,)](
+                x, acc, average, count, N, NUM_BLOCKS, BLOCK_N, BLOCK_INNER
+            )
+            var_mean_kernel_2[(1,)](
+                acc, average, count, var, mean, N, correction, BLOCK_NUM
+            )
     else:
         shape = list(x.shape)
         dim = [d % x.ndim for d in dim]
